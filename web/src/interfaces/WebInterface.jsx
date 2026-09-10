@@ -178,11 +178,12 @@ export function WebInterface() {
       }
 
       const res = await api.createOrder(orderPayload)
-      if (res && res.success) {
-        setCreatedOrder(res.order)
+      if (res && (res.id || res.success || res.orderNumber)) {
+        const orderObj = res.order || res
+        setCreatedOrder(orderObj)
         setCartItems([])
         setIsSuccessModalOpen(true)
-        showToast(`Order #${res.order.id} placed successfully in database!`)
+        showToast(`Order #${orderObj.orderNumber || orderObj.id} placed successfully in database!`)
         // Refresh orders from db
         const updatedOrders = await api.getOrders(user?.id)
         if (updatedOrders && updatedOrders.length > 0) {

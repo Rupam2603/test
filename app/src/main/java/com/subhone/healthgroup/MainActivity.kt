@@ -25,9 +25,9 @@ class MainActivity : AppCompatActivity() {
     private val FILE_CHOOSER_REQUEST = 1
 
     // Configure website URLs: local dev server with latest changes, with remote fallback
-    private val localDevUrl = "http://10.0.2.2:3000/"
+    private val devServerUrl = "http://10.0.2.2:5173/"
     private val remoteProdUrl = "https://shop-phi-plum.vercel.app/"
-    private val baseUrl = localDevUrl
+    private val baseUrl = devServerUrl
     private val websiteUrl = "$baseUrl?platform=android_app&version=1.0"
 
     private val permissionLauncher = registerForActivityResult(
@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 if (url == null) return false
 
-                val isInternal = url.startsWith(localDevUrl) ||
+                val isInternal = url.startsWith(devServerUrl) ||
                         url.startsWith("http://localhost:3000") ||
                         url.startsWith("http://10.0.2.2:3000") ||
                         url.startsWith("http://10.0.2.2:5173") ||
@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
             ) {
                 super.onReceivedError(view, request, error)
                 // If local dev server cannot be reached, fallback gracefully to remote URL
-                if (request?.isForMainFrame == true && baseUrl == localDevUrl) {
+                if (request?.isForMainFrame == true && baseUrl == devServerUrl) {
                     view?.loadUrl("$remoteProdUrl?platform=android_app&version=1.0")
                 }
             }
