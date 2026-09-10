@@ -1,0 +1,43 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file
+local.properties
+
+# IntelliJ
+*.iml
+.idea/
+
+# Keystore files
+*.jks
+*.keystore
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+dist/
+
+# Archives & Large binaries
+*.zip
+*.tar.gz
+*.7z
+
+# Environment files
+.env
+.env.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
