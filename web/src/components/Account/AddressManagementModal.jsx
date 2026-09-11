@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { api } from '../../services/api'
+import { useCurrentLocation } from '../../hooks/useCurrentLocation'
 
 export function AddressManagementModal({ isOpen, onClose, user, onAddressSelected }) {
   const [addresses, setAddresses] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  const { location, detectLocation } = useCurrentLocation()
 
   // New Address Form State
   const [label, setLabel] = useState('Home')
@@ -17,6 +19,18 @@ export function AddressManagementModal({ isOpen, onClose, user, onAddressSelecte
   const [pincode, setPincode] = useState('700016')
   const [isDefault, setIsDefault] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const handleAutofillLocation = async () => {
+    if (detectLocation) {
+      await detectLocation()
+    }
+    if (location) {
+      setLine1(location.street || location.shortName || 'Park Street')
+      setCity(location.city || 'Kolkata')
+      setState(location.state || 'West Bengal')
+      setPincode(location.pincode || '700016')
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -184,13 +198,31 @@ export function AddressManagementModal({ isOpen, onClose, user, onAddressSelecte
             <form onSubmit={handleAddAddress} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>Add New Delivery Address</h4>
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer' }}
-                >
-                  ← Back to List
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={handleAutofillLocation}
+                    style={{
+                      background: '#ecfdf5',
+                      color: '#15803d',
+                      border: '1px solid #86efac',
+                      borderRadius: '8px',
+                      padding: '4px 10px',
+                      fontSize: '11.5px',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📍 Auto-Fill Current Location
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                    style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    ← Back to List
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>

@@ -24,10 +24,10 @@ class MainActivity : AppCompatActivity() {
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private val FILE_CHOOSER_REQUEST = 1
 
-    // Configure website URLs: local dev server with latest changes, with remote fallback
-    private val devServerUrl = "http://10.0.2.2:5173/"
+    // Configure website URLs: local bundled assets, with remote fallback
+    private val localAssetsUrl = "file:///android_asset/www/index.html"
     private val remoteProdUrl = "https://shop-phi-plum.vercel.app/"
-    private val baseUrl = devServerUrl
+    private val baseUrl = localAssetsUrl
     private val websiteUrl = "$baseUrl?platform=android_app&version=1.0"
 
     private val permissionLauncher = registerForActivityResult(
@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 if (url == null) return false
 
-                val isInternal = url.startsWith(devServerUrl) ||
+                val isInternal = url.startsWith(localAssetsUrl) ||
                         url.startsWith("http://localhost:3000") ||
                         url.startsWith("http://10.0.2.2:3000") ||
                         url.startsWith("http://10.0.2.2:5173") ||
@@ -125,8 +125,8 @@ class MainActivity : AppCompatActivity() {
                 error: android.webkit.WebResourceError?
             ) {
                 super.onReceivedError(view, request, error)
-                // If local dev server cannot be reached, fallback gracefully to remote URL
-                if (request?.isForMainFrame == true && baseUrl == devServerUrl) {
+                // If local assets cannot be loaded (shouldn't happen with bundling), fallback to remote URL
+                if (request?.isForMainFrame == true && baseUrl == localAssetsUrl) {
                     view?.loadUrl("$remoteProdUrl?platform=android_app&version=1.0")
                 }
             }

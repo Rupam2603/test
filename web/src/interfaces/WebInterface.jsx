@@ -11,7 +11,7 @@ import ProductCard from '../components/ProductCard'
 import ServiceCard from '../components/ServiceCard'
 import AuthPage from '../components/Auth/AuthPage'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
-import LiveOrderTrackerModal from '../components/Tracking/LiveOrderTrackerModal'
+import DeliveryLocationModal from '../components/Location/DeliveryLocationModal'
 import PrescriptionUploadModal from '../components/Prescription/PrescriptionUploadModal'
 import DiagnosticBookingModal from '../components/Diagnostics/DiagnosticBookingModal'
 import AddressManagementModal from '../components/Account/AddressManagementModal'
@@ -35,8 +35,8 @@ export function WebInterface() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [topCategory, setTopCategory] = useState('all')
-  const { location, detectLocation } = useCurrentLocation()
-  const [isTrackerOpen, setIsTrackerOpen] = useState(false)
+  const { location, detectLocation, selectAddress } = useCurrentLocation()
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
   const [selectedDiagnostic, setSelectedDiagnostic] = useState(null)
@@ -223,7 +223,7 @@ export function WebInterface() {
         onToggleMenu={() => setIsMenuOpen(prev => !prev)}
         isMenuOpen={isMenuOpen}
         location={location}
-        onOpenTracker={() => setIsTrackerOpen(true)}
+        onOpenLocation={() => setIsLocationModalOpen(true)}
       />
       
       {/* Modern Stylish Menu hidden behind Menu Icon */}
@@ -422,26 +422,29 @@ export function WebInterface() {
                           <span>Total Payable</span>
                           <span>₹{Math.max(0, cartTotal - 25)}</span>
                         </div>
+                        {/* Delivery Address & GPS Location Card */}
                         <div 
-                          className="cart-delivery-speed-pill" 
-                          onClick={() => setIsTrackerOpen(true)}
+                          className="cart-delivery-address-card" 
+                          onClick={() => setIsLocationModalOpen(true)}
                           role="button"
                           tabIndex={0}
-                          title="Click to view Live 10-Minute Express Delivery Tracker"
+                          title="Delivery Address: Click to locate current GPS or change address"
                         >
-                          <div className="speed-pill-left">
-                            <span className="speed-icon">⚡</span>
-                            <div>
-                              <div className="speed-title-row">
-                                <strong>10-Min Fast-Track Dispatch</strong>
-                                <span className="speed-live-tag">LIVE GPS</span>
-                              </div>
-                              <p className="speed-address-text">
-                                Deliver to: {location?.shortName || location?.address || 'Park Street, Kolkata'}
-                              </p>
-                            </div>
+                          <div className="delivery-card-icon-wrap">
+                            <span className="delivery-card-icon">📍</span>
                           </div>
-                          <span className="speed-arrow">→</span>
+                          <div className="delivery-card-content">
+                            <div className="delivery-card-badge-row">
+                              <span className="delivery-card-label">DELIVERING TO</span>
+                              <span className="delivery-card-gps-tag">
+                                {location?.isExact ? '✓ Current GPS' : '⚡ 10-Min Delivery'}
+                              </span>
+                            </div>
+                            <p className="delivery-card-address">
+                              {location?.address || 'Park Street, Kolkata, West Bengal 700016'}
+                            </p>
+                            <span className="delivery-card-change-link">Change or Locate Current GPS ▾</span>
+                          </div>
                         </div>
 
                         <button className="web-checkout-btn" onClick={handleCheckout}>
@@ -523,7 +526,7 @@ export function WebInterface() {
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                               {!isDelivered && (
-                                <button className="track-order-btn" onClick={() => setIsTrackerOpen(true)}>Track Live 📍</button>
+                                <button className="track-order-btn" onClick={() => showToast(`Order #${orderId} destination: ${order.delivery_address || order.deliveryAddress || 'Delivery Address'}`)}>Dispatch Active 🚚</button>
                               )}
                               <button 
                                 className="reorder-btn"
@@ -604,11 +607,17 @@ export function WebInterface() {
         </main>
       </div>
 
-      {/* 10-Minute Rapid Live Delivery Tracker Modal */}
-      <LiveOrderTrackerModal 
-        isOpen={isTrackerOpen} 
-        onClose={() => setIsTrackerOpen(false)} 
-        userLocation={location} 
+      {/* Delivery Address & Location Modal (Powered by Google Maps & GPS) */}
+      <DeliveryLocationModal 
+        isOpen={isLocationModalOpen} 
+        onClose={() => setIsLocationModalOpen(false)} 
+        location={location}
+        detectLocation={detectLocation}
+        onSelectAddress={(addr) => {
+          if (selectAddress) selectAddress(addr)
+          showToast(`Delivery address set to: ${addr.line1 || addr.shortName || addr.city}`)
+        }}
+        user={user}
       />
 
       {/* Interactive Backend Modals */}
@@ -650,7 +659,7 @@ export function WebInterface() {
         order={createdOrder}
         onTrackOrder={() => {
           setIsSuccessModalOpen(false)
-          setIsTrackerOpen(true)
+          setActiveTab('order')
         }}
         onViewOrders={() => {
           setIsSuccessModalOpen(false)

@@ -3158,14 +3158,97 @@ html, body {
 .speed-address-text {
   font-size: 12px;
   color: #166534;
-  margin: 3px 0 0 0;
+  margin: 2px 0 0;
   font-weight: 600;
 }
 
 .speed-arrow {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   color: #16a34a;
+}
+
+/* Cart Delivery Address Card (GPS Location Picker) */
+.cart-delivery-address-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cart-delivery-address-card:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.12);
+}
+
+.delivery-card-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.delivery-card-icon {
+  font-size: 18px;
+}
+
+.delivery-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.delivery-card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.delivery-card-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.delivery-card-gps-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.delivery-card-address {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delivery-card-change-link {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #2563eb;
+  margin-top: 2px;
 }
 
 /* Live Order Tracker Modal Overlay & Container */

@@ -47,14 +47,22 @@ export function useCurrentLocation() {
         const first = data.results[0]
         const formatted = first.formatted_address
         const comp = first.address_components || []
-        const sublocality = comp.find(c => c.types.includes('sublocality') || c.types.includes('neighborhood'))?.long_name
+        const route = comp.find(c => c.types.includes('route'))?.long_name || ''
+        const streetNumber = comp.find(c => c.types.includes('street_number'))?.long_name || ''
+        const sublocality = comp.find(c => c.types.includes('sublocality') || c.types.includes('neighborhood'))?.long_name || ''
         const locality = comp.find(c => c.types.includes('locality'))?.long_name || 'Kolkata'
+        const administrativeArea = comp.find(c => c.types.includes('administrative_area_level_1'))?.long_name || 'West Bengal'
         const postal = comp.find(c => c.types.includes('postal_code'))?.long_name || '700016'
 
+        const streetLine = [streetNumber, route].filter(Boolean).join(' ') || sublocality || 'Park Street'
         const short = sublocality ? `${sublocality}, ${locality}` : locality
+
         return {
           address: formatted,
           shortName: short,
+          street: streetLine,
+          city: locality,
+          state: administrativeArea,
           pincode: postal
         }
       }
@@ -63,8 +71,11 @@ export function useCurrentLocation() {
     }
 
     return {
-      address: 'Park Street Crossing, Kolkata, WB 700016',
+      address: 'Park Street Crossing, Kolkata, West Bengal 700016',
       shortName: 'Park Street, Kolkata',
+      street: 'Park Street',
+      city: 'Kolkata',
+      state: 'West Bengal',
       pincode: '700016'
     }
   }
@@ -90,6 +101,9 @@ export function useCurrentLocation() {
           lng: longitude,
           address: geoInfo.address,
           shortName: geoInfo.shortName,
+          street: geoInfo.street,
+          city: geoInfo.city,
+          state: geoInfo.state,
           pincode: geoInfo.pincode,
           isExact: true,
           accuracyMeters: Math.round(accuracy),
@@ -99,6 +113,7 @@ export function useCurrentLocation() {
         setLocation(newLoc)
         try {
           sessionStorage.setItem('subhone_user_location', JSON.stringify(newLoc))
+          localStorage.setItem('subhone_delivery_address', JSON.stringify(newLoc))
         } catch {}
       },
       (err) => {
@@ -106,7 +121,7 @@ export function useCurrentLocation() {
         setLocation(prev => ({
           ...prev,
           loading: false,
-          error: err.code === 1 ? 'Location access denied. Using express hub address.' : 'GPS signal weak. Using express hub address.'
+          error: err.code === 1 ? 'Location access denied. Using default address.' : 'GPS signal weak. Using default address.'
         }))
       },
       {
@@ -115,6 +130,28 @@ export function useCurrentLocation() {
         maximumAge: 60000
       }
     )
+  }, [])
+
+  const selectAddress = useCallback((addr) => {
+    const customLoc = {
+      lat: addr.lat || 22.5535,
+      lng: addr.lng || 88.3512,
+      address: addr.formatted || [addr.line1, addr.line2, addr.city, addr.state, addr.pincode].filter(Boolean).join(', '),
+      shortName: addr.label ? `${addr.label} (${addr.city || 'Kolkata'})` : (addr.city || 'Delivery Address'),
+      street: addr.line1 || '',
+      city: addr.city || 'Kolkata',
+      state: addr.state || 'West Bengal',
+      pincode: addr.pincode || '700016',
+      isExact: false,
+      accuracyMeters: null,
+      loading: false,
+      error: null
+    }
+    setLocation(customLoc)
+    try {
+      sessionStorage.setItem('subhone_user_location', JSON.stringify(customLoc))
+      localStorage.setItem('subhone_delivery_address', JSON.stringify(customLoc))
+    } catch {}
   }, [])
 
   // Auto detect once if not already detected
@@ -127,6 +164,7 @@ export function useCurrentLocation() {
   return {
     location,
     detectLocation,
+    selectAddress,
     setLocation
   }
 }

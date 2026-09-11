@@ -1,49 +1,46 @@
 import React, { useState } from 'react'
 
-export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpen, location, onOpenTracker }) {
+export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpen, location, onOpenLocation, onOpenTracker }) {
   const [searchValue, setSearchValue] = useState('')
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false)
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     if (onSearch) {
       onSearch(searchValue)
     }
-    if (onTabChange) {
-      onTabChange('products')
-    }
   }
 
   return (
     <header className="web-header">
-      <div className="header-container">
-        {/* Left cluster with Menu Icon Trigger + Brand Logo */}
-        <div className="header-brand-cluster">
+      <div className="web-header-container">
+        {/* Left Section: Menu Toggle + SubhOne Brand Logo */}
+        <div className="web-header-left">
           <button 
-            type="button"
-            className={`web-menu-trigger-btn ${isMenuOpen ? 'open' : ''}`}
+            type="button" 
+            className="menu-toggle-btn" 
             onClick={onToggleMenu}
-            aria-label="Toggle navigation menu"
-            title="Open Menu"
+            aria-label={isMenuOpen ? "Close category navigation menu" : "Open category navigation menu"}
+            title="Browse Categories & Health Departments"
           >
-            <div className="menu-hamburger-lines">
-              <span className="line line-1"></span>
-              <span className="line line-2"></span>
-              <span className="line line-3"></span>
-            </div>
-            <span className="menu-trigger-label">Menu</span>
+            <span className="hamburger-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <span className="menu-btn-label">Menu</span>
           </button>
 
           <div 
-            className="web-brand-logo-group" 
-            onClick={() => onTabChange && onTabChange('home')} 
+            className="web-brand-logo" 
+            onClick={() => onTabChange && onTabChange('home')}
             role="button"
             tabIndex={0}
-            title="SubhOne Health Group - Home"
           >
             <img 
-              src="/subhone_logo.png" 
+              src="https://zdqomjcgmst0grfw.public.blob.vercel-storage.com/products/image_1788243981535.webp" 
               alt="SubhOne Health Group Logo" 
-              className="web-header-brand-icon"
+              className="logo-mark"
               onError={(e) => {
                 e.target.style.display = 'none'
               }}
@@ -55,13 +52,13 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
           </div>
         </div>
 
-        {/* Live GPS Exact Location & 10-Min Fast-Track Pill */}
+        {/* User Delivery Address Pill (Locates user's current location for delivery address) */}
         <div 
           className="header-location-pill" 
-          onClick={onOpenTracker} 
+          onClick={onOpenLocation || onOpenTracker} 
           role="button" 
           tabIndex={0}
-          title="Exact Location Tracking & 10-Min Delivery Tracker"
+          title="Delivery Address: Click to locate your current location or change address"
         >
           <div className="location-pin-wrap">
             <span className="location-pin-icon">📍</span>
@@ -70,12 +67,12 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
           <div className="location-text-stack">
             <div className="location-title-row">
               <span className="location-title">
-                {location?.isExact ? 'Current Location' : 'Express Delivery'}
+                {location?.isExact ? 'Deliver to (Current)' : 'Deliver to'}
               </span>
               <span className="ten-min-badge">⚡ 10 MINS</span>
             </div>
             <span className="location-address-preview">
-              {location?.loading ? 'Detecting GPS...' : (location?.shortName || location?.address || 'Park Street, Kolkata')}
+              {location?.loading ? 'Detecting GPS...' : (location?.shortName || location?.address || 'Select Delivery Location')}
             </span>
           </div>
         </div>

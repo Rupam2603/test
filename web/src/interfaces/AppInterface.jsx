@@ -10,14 +10,14 @@ import AppBottomNav from '../components/App/AppBottomNav'
 import AppFooterModal from '../components/App/AppFooterModal'
 import AuthPage from '../components/Auth/AuthPage'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
-import LiveOrderTrackerModal from '../components/Tracking/LiveOrderTrackerModal'
+import DeliveryLocationModal from '../components/Location/DeliveryLocationModal'
 import '../styles/app.css'
 
 export function AppInterface() {
   const [activeTab, setActiveTab] = useState('home')
   const [activeFooterPage, setActiveFooterPage] = useState(null)
-  const { location } = useCurrentLocation()
-  const [isTrackerOpen, setIsTrackerOpen] = useState(false)
+  const { location, detectLocation, selectAddress } = useCurrentLocation()
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [cartItems, setCartItems] = useState([
     {
       id: 'c48e3a34-f6f0-412b-8493-ce3e07133bfb',
@@ -255,7 +255,7 @@ export function AppInterface() {
         onSearch={setSearchQuery} 
         cartCount={cartCount} 
         location={location}
-        onOpenTracker={() => setIsTrackerOpen(true)}
+        onOpenLocation={() => setIsLocationModalOpen(true)}
       />
 
       <main className="app-main-content">
@@ -381,13 +381,9 @@ export function AppInterface() {
                       <span>🚚 {order.driverName}</span>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span style={{ fontWeight: '700', color: '#166534' }}>ETA: {order.eta}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => setIsTrackerOpen(true)}
-                          style={{ background: '#166534', color: '#fff', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
-                        >
-                          Track 📍
-                        </button>
+                        <span style={{ background: '#dcfce7', color: '#15803d', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '700' }}>
+                          ✓ Confirmed
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -485,6 +481,34 @@ export function AppInterface() {
                       <div className="app-bill-row total">
                         <span>Total Payable</span>
                         <span style={{ color: '#166534' }}>₹{finalTotal.toLocaleString()}</span>
+                      </div>
+
+                      {/* Delivery Destination Address Row */}
+                      <div 
+                        onClick={() => setIsLocationModalOpen(true)}
+                        style={{
+                          background: '#f8fafc',
+                          border: '1.5px solid #cbd5e1',
+                          borderRadius: '12px',
+                          padding: '10px 14px',
+                          marginTop: '14px',
+                          marginBottom: '10px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>📍</span>
+                          <div>
+                            <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Delivery Address</span>
+                            <p style={{ margin: 0, fontSize: '12.5px', fontWeight: '700', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '190px' }}>
+                              {location?.shortName || location?.address || 'Select Delivery Location'}
+                            </p>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#2563eb' }}>Change ▾</span>
                       </div>
 
                       <div className="app-checkout-sticky-bar">
@@ -597,11 +621,17 @@ export function AppInterface() {
         />
       )}
 
-      {/* 10-Minute Rapid Live Delivery Tracker Modal */}
-      <LiveOrderTrackerModal 
-        isOpen={isTrackerOpen} 
-        onClose={() => setIsTrackerOpen(false)} 
-        userLocation={location} 
+      {/* Delivery Address & Location Modal (Powered by Google Maps & GPS) */}
+      <DeliveryLocationModal 
+        isOpen={isLocationModalOpen} 
+        onClose={() => setIsLocationModalOpen(false)} 
+        location={location}
+        detectLocation={detectLocation}
+        onSelectAddress={(addr) => {
+          if (selectAddress) selectAddress(addr)
+          showToast(`Delivery location set to: ${addr.line1 || addr.shortName || addr.city}`)
+        }}
+        user={user}
       />
 
       {/* Toast Feedback Notification */}

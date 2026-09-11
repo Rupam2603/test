@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export function AppHeader({ onTabChange, onSearch, cartCount = 0, user, onLogout, location, onOpenTracker }) {
+export function AppHeader({ onTabChange, onSearch, cartCount = 0, user, onLogout, location, onOpenLocation, onOpenTracker }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -62,17 +62,17 @@ export function AppHeader({ onTabChange, onSearch, cartCount = 0, user, onLogout
         </div>
       </div>
 
-      {/* Deliver To & Fast Delivery Row (Clickable to open 10-Min Live Delivery Tracker) */}
+      {/* Deliver To Row (Locates user's current location for delivery address) */}
       <div 
         className="app-delivery-row"
-        onClick={onOpenTracker}
+        onClick={onOpenLocation || onOpenTracker}
         style={{ cursor: 'pointer' }}
-        title="Live GPS Location & 10-Min Fast Track Tracker"
+        title="Delivery Address - Locate Current Location for Delivery"
       >
         <div className="app-delivery-location">
           <span className="app-loc-pin">📍</span>
           <span className="app-loc-text">
-            Deliver to: <strong>{location?.loading ? 'Detecting GPS...' : (location?.shortName || location?.address || 'Local Area (712250)')}</strong> ▾
+            Deliver to: <strong>{location?.loading ? 'Detecting GPS...' : (location?.shortName || location?.address || 'Local Area (700016)')}</strong> ▾
           </span>
         </div>
         <div className="app-delivery-speed-pill">
