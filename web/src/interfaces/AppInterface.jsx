@@ -19,49 +19,23 @@ export function AppInterface() {
   const [activeFooterPage, setActiveFooterPage] = useState(null)
   const { location, detectLocation, selectAddress } = useCurrentLocation()
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 'c48e3a34-f6f0-412b-8493-ce3e07133bfb',
-      numericId: 1,
-      name: 'Volini Pain Relief Gel 15g',
-      pack: 'Fast Pain Relief Gel',
-      price: 11,
-      mrp: 15,
-      qty: 2,
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&q=80'
-    },
-    {
-      id: '26f7c1c5-7ac6-40ef-b5ab-fb51bc4af999',
-      numericId: 2,
-      name: 'Amrutanjan Strong Pain Balm 44g',
-      pack: 'Headache & Back Pain',
-      price: 36,
-      mrp: 44,
-      qty: 1,
-      image: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&q=80'
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('subhone_app_cart')
+      return saved ? JSON.parse(saved) : []
+    } catch (e) {
+      return []
     }
-  ])
+  })
 
-  const [orders, setOrders] = useState([
-    {
-      id: 'SUBH-8921',
-      date: 'Today, 02:45 PM',
-      itemsCount: 3,
-      total: 412,
-      status: 'Out for 30-min Delivery',
-      driverName: 'Suman Roy (SubhOne Fleet)',
-      eta: '12 mins'
-    },
-    {
-      id: 'SUBH-7640',
-      date: '08 Sep 2026',
-      itemsCount: 1,
-      total: 999,
-      status: 'Delivered',
-      driverName: 'Express Courier',
-      eta: 'Completed'
-    }
-  ])
+  // Synchronize cartItems with localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('subhone_app_cart', JSON.stringify(cartItems))
+    } catch (e) {}
+  }, [cartItems])
+
+  const [orders, setOrders] = useState([])
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0)
   const [products, setProducts] = useState(APP_DEALS_PRODUCTS)
@@ -445,9 +419,33 @@ export function AppInterface() {
 
         {activeTab === 'cart' && (
           <section className="app-tab-section">
-            <div className="app-tab-header">
-              <h2>Retailer Wholesale Cart</h2>
-              <p>Review items, GST invoicing and confirm wholesale delivery</p>
+            <div className="app-tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2>Retailer Wholesale Cart</h2>
+                <p>Review items, GST invoicing and confirm wholesale delivery</p>
+              </div>
+              {cartItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCartItems([])
+                    try { localStorage.removeItem('subhone_app_cart') } catch (e) {}
+                    showToast('Cart cleared')
+                  }}
+                  style={{
+                    background: '#fef2f2',
+                    color: '#dc2626',
+                    border: '1px solid #fecaca',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🗑️ Clear Cart
+                </button>
+              )}
             </div>
 
             {cartItems.length === 0 ? (

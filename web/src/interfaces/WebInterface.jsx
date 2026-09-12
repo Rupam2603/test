@@ -41,7 +41,22 @@ export function WebInterface() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [createdOrder, setCreatedOrder] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
-  const [cartItems, setCartItems] = useState([])
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('subhone_web_cart')
+      return saved ? JSON.parse(saved) : []
+    } catch (e) {
+      return []
+    }
+  })
+
+  // Synchronize cartItems with localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('subhone_web_cart', JSON.stringify(cartItems))
+    } catch (e) {}
+  }, [cartItems])
+
   const [user, setUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('subhone_auth_user') || 'null')
