@@ -11,6 +11,7 @@ import ProductCard from '../components/ProductCard'
 import ProductDetails from '../components/ProductDetails'
 import AuthPage from '../components/Auth/AuthPage'
 import AccountProfileView from '../components/Account/AccountProfileView'
+import AdminDashboard from './AdminDashboard'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
 import DeliveryLocationModal from '../components/Location/DeliveryLocationModal'
 import AddressManagementModal from '../components/Account/AddressManagementModal'
@@ -199,6 +200,18 @@ export function WebInterface() {
           setActiveTab('home')
         }}
         onClose={() => setActiveTab('home')}
+      />
+    )
+  }
+
+  if (activeTab === 'admin') {
+    return (
+      <AdminDashboard 
+        onLogout={() => {
+          localStorage.removeItem('subhone_auth_user')
+          setUser(null)
+          setActiveTab('home')
+        }} 
       />
     )
   }

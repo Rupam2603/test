@@ -289,6 +289,16 @@ export const api = {
       console.warn('updateUserProfile db note:', e.message)
       return { success: true, ...profileData }
     }
+  },
+
+  async getAllUsers() {
+    try {
+      const { fetchDbAllUsers } = await import('./db')
+      return await fetchDbAllUsers()
+    } catch (e) {
+      console.warn('getAllUsers db note:', e.message)
+      return []
+    }
   }
 }
 

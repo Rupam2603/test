@@ -733,3 +733,61 @@ export async function saveDbUserProfile(profileData) {
 
   return result
 }
+
+/**
+ * Fetch all registered users and retailer profiles for Admin Panel
+ */
+export async function fetchDbAllUsers() {
+  const sql = getDbClient()
+  if (!sql) return []
+
+  try {
+    await sql.query(`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id VARCHAR(100) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE,
+        first_name VARCHAR(100),
+        last_name VARCHAR(100),
+        full_name VARCHAR(200),
+        phone VARCHAR(50),
+        avatar_url TEXT,
+        address TEXT,
+        dob VARCHAR(30),
+        age INT,
+        gender VARCHAR(30),
+        shop_name VARCHAR(200),
+        role VARCHAR(50) DEFAULT 'customer',
+        signup_method VARCHAR(20) DEFAULT 'email',
+        updated_at TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `)
+
+    const rows = await sql.query(`
+      SELECT * FROM user_profiles 
+      ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+    `)
+
+    return (rows || []).map(r => ({
+      id: r.id,
+      email: r.email || '',
+      phone: r.phone || '',
+      firstName: r.first_name || '',
+      lastName: r.last_name || '',
+      name: r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || r.email || r.phone || 'User',
+      avatar: r.avatar_url || '',
+      address: r.address || '',
+      dob: r.dob || '',
+      age: r.age ?? '',
+      gender: r.gender || '',
+      shopName: r.shop_name || '',
+      role: r.role || 'customer',
+      signupMethod: r.signup_method || (r.email ? 'email' : 'phone'),
+      updatedAt: r.updated_at,
+      createdAt: r.created_at
+    }))
+  } catch (err) {
+    console.warn('fetchDbAllUsers error:', err.message)
+    return []
+  }
+}
