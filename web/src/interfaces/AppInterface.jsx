@@ -85,6 +85,47 @@ export function AppInterface() {
     syncUserProfile()
   }, [])
 
+  // Automatically fetch user orders whenever user logs in or switches to order tab
+  useEffect(() => {
+    loadOrders(user)
+  }, [user?.id, user?.email, user?.phone, activeTab])
+
+  async function loadOrders(currentUser = user) {
+    try {
+      const userParam = currentUser 
+        ? { id: currentUser.id, email: currentUser.email, phone: currentUser.phone }
+        : null
+      const dbOrders = await api.getOrders(userParam)
+      if (dbOrders && dbOrders.length > 0) {
+        setOrders(dbOrders.map(o => {
+          const rawDate = o.createdAt || o.created_at
+          const formattedDate = rawDate 
+            ? new Date(rawDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+            : 'Today'
+
+          const totalVal = Number(o.totalAmount || o.total_amount || o.total || 0)
+          const itemsCount = o.itemsCount || (o.items ? o.items.length : 1)
+          const orderNum = o.orderNumber || o.order_number || o.id
+
+          return {
+            id: orderNum,
+            dbId: o.id,
+            date: formattedDate,
+            itemsCount,
+            itemsSummary: o.itemsSummary || 'Healthcare essentials',
+            total: totalVal,
+            status: o.status === 'CONFIRMED' ? 'Order Confirmed • Packing' : (o.status || 'Out for Delivery'),
+            driverName: o.driverName || 'SubhOne Fleet Dispatch',
+            eta: o.eta || '10 mins',
+            items: o.items || []
+          }
+        }))
+      }
+    } catch (errOrders) {
+      console.warn('Orders database load in app:', errOrders)
+    }
+  }
+
   async function syncUserProfile() {
     try {
       const queryKey = user?.email || user?.phone || user?.id
@@ -114,23 +155,7 @@ export function AppInterface() {
         setServices(servData)
       }
 
-      // Fetch real database orders
-      try {
-        const dbOrders = await api.getOrders(user?.id)
-        if (dbOrders && dbOrders.length > 0) {
-          setOrders(dbOrders.map(o => ({
-            id: o.id,
-            date: o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Today',
-            itemsCount: o.items ? o.items.length : 1,
-            total: o.total_amount || 0,
-            status: o.status === 'CONFIRMED' ? 'Order Confirmed • Packing' : (o.status || 'Out for Delivery'),
-            driverName: 'SubhOne Fleet Dispatch',
-            eta: '10 mins'
-          })))
-        }
-      } catch (errOrders) {
-        console.warn('Orders database load in app:', errOrders)
-      }
+      await loadOrders(user)
     } catch (err) {
       console.warn('Error loading catalog data from backend:', err)
     }
@@ -387,7 +412,14 @@ export function AppInterface() {
                         {order.status}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '10px 0', fontSize: '13px' }}>
+
+                    {order.itemsSummary && (
+                      <div style={{ fontSize: '12.5px', fontWeight: '600', color: '#334155', margin: '6px 0 2px' }}>
+                        💊 {order.itemsSummary}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', fontSize: '13px' }}>
                       <span style={{ color: '#475569' }}>
                         📦 {order.itemsCount} {order.itemsCount === 1 ? 'item' : 'items'}
                       </span>

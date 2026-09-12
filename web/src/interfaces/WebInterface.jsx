@@ -63,7 +63,7 @@ export function WebInterface() {
     }
     if (activeTab === 'order' || activeTab === 'bookings' || activeTab === 'home') {
       try {
-        const orderData = await api.getOrders(user?.id)
+        const orderData = await api.getOrders(user)
         if (orderData && orderData.length > 0) {
           setOrders(orderData)
         }
@@ -175,7 +175,7 @@ export function WebInterface() {
         setIsSuccessModalOpen(true)
         showToast(`Order #${orderObj.orderNumber || orderObj.id} placed successfully in database!`)
         // Refresh orders from db
-        const updatedOrders = await api.getOrders(user?.id)
+        const updatedOrders = await api.getOrders(user)
         if (updatedOrders && updatedOrders.length > 0) {
           setOrders(updatedOrders)
         }

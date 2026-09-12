@@ -314,21 +314,87 @@ export async function createDbOrder(orderData) {
 
 /**
  * Fetch orders and line items from Neon Postgres
+ * Supports user id, email, phone, or user object { id, email, phone }
  */
-export async function fetchDbOrders(userId = null) {
+export async function fetchDbOrders(userOrId = null) {
   const sql = getDbClient()
   if (!sql) return []
 
   try {
-    let query = 'SELECT * FROM orders'
-    const params = []
-    if (userId) {
-      params.push(userId)
-      query += ' WHERE user_id = $1'
-    }
-    query += ' ORDER BY created_at DESC LIMIT 20'
+    let whereClauses = []
+    let values = []
 
-    const orders = await sql.query(query, params)
+    let id = null
+    let email = null
+    let phone = null
+
+    if (userOrId && typeof userOrId === 'object') {
+      id = userOrId.id || userOrId.userId || null
+      email = userOrId.email || null
+      phone = userOrId.phone || null
+    } else if (userOrId && typeof userOrId === 'string') {
+      if (userOrId.includes('@')) {
+        email = userOrId
+      } else if (/^\+?\d[\d\s-]{6,}$/.test(userOrId)) {
+        phone = userOrId
+      } else {
+        id = userOrId
+      }
+    }
+
+    // Collect all known user_ids that could be associated with this user
+    let matchingUserIds = new Set()
+    if (id) matchingUserIds.add(String(id))
+
+    if (email || phone) {
+      try {
+        const uProfiles = await sql.query(
+          'SELECT id FROM user_profiles WHERE ($1::text IS NOT NULL AND LOWER(email) = LOWER($1)) OR ($2::text IS NOT NULL AND phone = $2)',
+          [email || null, phone || null]
+        )
+        if (uProfiles && uProfiles.length > 0) {
+          uProfiles.forEach(u => matchingUserIds.add(String(u.id)))
+        }
+      } catch (e) {}
+
+      try {
+        const uUsers = await sql.query(
+          'SELECT id FROM users WHERE ($1::text IS NOT NULL AND LOWER(email) = LOWER($1))',
+          [email || null]
+        )
+        if (uUsers && uUsers.length > 0) {
+          uUsers.forEach(u => matchingUserIds.add(String(u.id)))
+        }
+      } catch (e) {}
+    }
+
+    for (const uid of matchingUserIds) {
+      values.push(uid)
+      whereClauses.push(`user_id = $${values.length}`)
+    }
+
+    if (phone) {
+      const cleanPhone = phone.replace(/[^\d]/g, '')
+      values.push(phone)
+      whereClauses.push(`customer_phone = $${values.length}`)
+      if (cleanPhone && cleanPhone.length >= 7) {
+        values.push(`%${cleanPhone}%`)
+        whereClauses.push(`customer_phone LIKE $${values.length}`)
+      }
+    }
+
+    if (email) {
+      values.push(`%${email.toLowerCase().trim()}%`)
+      whereClauses.push(`LOWER(shipping_address::text) LIKE $${values.length}`)
+    }
+
+    let query = 'SELECT * FROM orders'
+    if (whereClauses.length > 0) {
+      query += ' WHERE (' + whereClauses.join(' OR ') + ')'
+    }
+    query += ' ORDER BY created_at DESC LIMIT 40'
+
+    const orders = await sql.query(query, values)
     if (!orders || orders.length === 0) return []
 
     // Fetch items for each order
@@ -345,24 +411,38 @@ export async function fetchDbOrders(userId = null) {
         }
 
         const itemsSummary = items.length > 0
-          ? items.map(i => i.product_name).slice(0, 2).join(' & ') + (items.length > 2 ? ` +${items.length - 2} more` : '')
+          ? items.map(i => i.product_name || i.name).slice(0, 2).join(' & ') + (items.length > 2 ? ` +${items.length - 2} more` : '')
           : 'Healthcare essentials'
+
+        const total = Number(o.total_amount || 0)
 
         return {
           id: o.id,
+          order_number: o.order_number,
           orderNumber: o.order_number,
           userId: o.user_id,
+          user_id: o.user_id,
           customerName: o.customer_name,
+          customer_name: o.customer_name,
           customerPhone: o.customer_phone,
+          customer_phone: o.customer_phone,
           shippingAddress: parsedAddr,
-          totalAmount: Number(o.total_amount || 0),
+          shipping_address: parsedAddr,
+          totalAmount: total,
+          total_amount: total,
+          total: total,
           paymentMethod: o.payment_method,
+          payment_method: o.payment_method,
           paymentStatus: o.payment_status,
+          payment_status: o.payment_status,
           status: o.status || 'Processing',
           deliveryStatus: o.delivery_status || 'in-transit',
+          delivery_status: o.delivery_status || 'in-transit',
           invoiceNumber: o.invoice_number,
+          invoice_number: o.invoice_number,
           createdAt: o.created_at,
-          itemsCount: items.reduce((acc, i) => acc + (i.quantity || 1), 0),
+          created_at: o.created_at,
+          itemsCount: items.length > 0 ? items.reduce((acc, i) => acc + (i.quantity || 1), 0) : 1,
           itemsSummary,
           items
         }

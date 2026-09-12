@@ -225,9 +225,9 @@ export const api = {
     }
   },
 
-  async getOrders(userId = null) {
+  async getOrders(userOrId = null) {
     try {
-      return await fetchDbOrders(userId)
+      return await fetchDbOrders(userOrId)
     } catch (error) {
       console.warn('fetchDbOrders failed:', error.message)
       return []
