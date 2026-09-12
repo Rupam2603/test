@@ -1,43 +1,49 @@
-import React, { useState } from 'react'
-import { APP_QUICK_FILTERS, APP_VISUAL_CATEGORIES } from '../../data/appCatalog'
+import React, { useState, useRef } from 'react'
+import { APP_VISUAL_CATEGORIES } from '../../data/appCatalog'
+import { WEB_CATEGORIES } from '../Navigation/WebTopCategoryBar'
 
 export function AppCategorySection({ onSelectCategory }) {
   const [activeFilter, setActiveFilter] = useState('all')
+  const scrollRef = useRef(null)
 
   const handleFilterClick = (id) => {
     setActiveFilter(id)
     if (onSelectCategory) onSelectCategory(id)
   }
 
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 160, behavior: 'smooth' })
+    }
+  }
+
   return (
     <div className="app-categories-wrapper">
-      {/* Quick Icon Strip (Image 1) */}
-      <div className="app-quick-filter-strip">
-        <div className="app-quick-filter-scroll">
-          {APP_QUICK_FILTERS.map(f => {
-            const isActive = activeFilter === f.id
+      {/* Sleek Vector Category Strip */}
+      <div className="app-categories-strip-section">
+        <div className="app-categories-scroll-row" ref={scrollRef}>
+          {WEB_CATEGORIES.map(cat => {
+            const isActive = activeFilter === cat.id
             return (
               <button
-                key={f.id}
-                className={`app-filter-item-btn ${isActive ? 'active' : ''}`}
-                onClick={() => handleFilterClick(f.id)}
+                key={cat.id}
+                type="button"
+                className={`app-filter-item-pill ${isActive ? 'is-active' : ''}`}
+                onClick={() => handleFilterClick(cat.id)}
+                aria-label={cat.label}
               >
-                <div className="app-filter-icon-box">
-                  {f.id === 'all' ? (
-                    <span className="app-grid-icon">⊞</span>
-                  ) : (
-                    <span>{f.icon}</span>
-                  )}
+                <div 
+                  className="app-category-disc"
+                  style={{ background: cat.circleBg }}
+                >
+                  {cat.renderIcon()}
                 </div>
-                <span className="app-filter-label">{f.label}</span>
-                {isActive && <div className="app-active-pink-bar"></div>}
+                <span className="app-category-label">{cat.label}</span>
+                {isActive && <div className="app-active-indicator-dot"></div>}
               </button>
             )
           })}
         </div>
-        <button className="app-strip-arrow-btn" aria-label="Next categories">
-          ›
-        </button>
       </div>
 
       {/* Visual Category Grid (Image 2) */}

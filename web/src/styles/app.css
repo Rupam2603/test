@@ -378,13 +378,6 @@
   display: none;
 }
 
-  width: 26px;
-  height: 3px;
-  background: #e11d48;
-  border-radius: 999px;
-  margin-top: 4px;
-}
-
 /* Regular Category Pill */
 .app-filter-item-pill {
   display: flex;

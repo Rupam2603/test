@@ -30,14 +30,37 @@ export function AppHeader({ onTabChange, onSearch, cartCount = 0, user, onLogout
 
         <div className="app-header-right-actions">
           {user ? (
-            <button 
-              className="app-logout-pill-btn"
-              onClick={() => onLogout ? onLogout() : alert('Logged out')}
-            >
-              Logout
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button 
+                type="button"
+                className="app-user-avatar-circle"
+                onClick={() => onTabChange && onTabChange('account')}
+                title={`Logged in as ${user.name || 'User'} - Open Account`}
+                aria-label="Open Account Profile"
+              >
+                {user.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt={user.name || 'User'} 
+                    style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <span>{initial}</span>
+                )}
+              </button>
+              <button 
+                type="button"
+                className="app-logout-pill-btn"
+                style={{ padding: '6px 10px', fontSize: '11px' }}
+                onClick={() => onLogout ? onLogout() : alert('Logged out')}
+                title="Logout"
+              >
+                Logout
+              </button>
+            </div>
           ) : (
             <button 
+              type="button"
               className="app-logout-pill-btn"
               style={{ background: '#2563eb', color: '#ffffff', borderColor: '#1d4ed8', fontWeight: '700' }}
               onClick={() => onTabChange && onTabChange('login')}

@@ -29,9 +29,21 @@ export default function RootNavigator() {
 
   // Check for existing session
   useEffect(() => {
-    const savedRole = localStorage.getItem('app_role');
-    if (savedRole) {
-      setCurrentUser({ role: savedRole });
+    try {
+      const authUserStr = localStorage.getItem('subhone_auth_user');
+      const savedRole = localStorage.getItem('app_role');
+      if (authUserStr) {
+        const parsed = JSON.parse(authUserStr);
+        const role = parsed.role || savedRole || 'customer';
+        setCurrentUser({ ...parsed, role });
+        if (!savedRole) {
+          localStorage.setItem('app_role', role);
+        }
+      } else if (savedRole) {
+        setCurrentUser({ role: savedRole });
+      }
+    } catch (err) {
+      console.warn('Session restoration error:', err);
     }
   }, []);
 
@@ -47,14 +59,24 @@ export default function RootNavigator() {
       if (email.toLowerCase().includes('admin')) assignedRole = 'admin';
       else if (email.toLowerCase().includes('retailer') || email.toLowerCase().includes('partner')) assignedRole = 'retailer';
       
+      const userPayload = {
+        name: email.split('@')[0],
+        email: email.toLowerCase(),
+        role: assignedRole,
+        portal: assignedRole,
+        isVerified: true
+      };
+
       localStorage.setItem('app_role', assignedRole);
-      setCurrentUser({ role: assignedRole });
+      localStorage.setItem('subhone_auth_user', JSON.stringify(userPayload));
+      setCurrentUser(userPayload);
       setIsAuthenticating(false);
     }, 1200);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('app_role');
+    localStorage.removeItem('subhone_auth_user');
     setCurrentUser(null);
     setEmail('');
     setPassword('');
