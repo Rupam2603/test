@@ -932,12 +932,16 @@ export async function saveDbUserProfile(profileData) {
 }
 
 /**
- * Fetch all registered users and retailer profiles for Admin Panel
+ * Fetch ALL registered users for Admin Panel.
+ * Merges records from user_profiles, profiles, users, auth_users, and
+ * retailer_approvals tables so every existing account is visible.
+ * Deduplicates by email → phone → id (email wins if present).
  */
 export async function fetchDbAllUsers() {
   const sql = getDbClient()
   if (!sql) return []
 
+  // Ensure the app-side table exists
   try {
     await sql.query(`
       CREATE TABLE IF NOT EXISTS user_profiles (
@@ -959,34 +963,141 @@ export async function fetchDbAllUsers() {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `)
+  } catch (_) {}
 
-    const rows = await sql.query(`
-      SELECT * FROM user_profiles 
-      ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
-    `)
+  // Helper: normalise a raw DB row into a unified user object
+  function norm(r, source = 'user_profiles') {
+    const fullName =
+      r.full_name ||
+      r.name ||
+      `${r.first_name || ''} ${r.last_name || ''}`.trim() ||
+      r.email?.split('@')[0] ||
+      r.retailer_name ||
+      r.phone ||
+      'User'
 
-    return (rows || []).map(r => ({
-      id: r.id,
-      email: r.email || '',
-      phone: r.phone || '',
-      firstName: r.first_name || '',
-      lastName: r.last_name || '',
-      name: r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || r.email || r.phone || 'User',
-      avatar: r.avatar_url || '',
-      address: r.address || '',
-      dob: r.dob || '',
-      age: r.age ?? '',
-      gender: r.gender || '',
-      shopName: r.shop_name || '',
-      role: r.role || 'customer',
+    const parts = fullName.split(' ')
+    return {
+      id:           String(r.id || ''),
+      email:        (r.email || '').toLowerCase().trim(),
+      phone:        r.phone || '',
+      firstName:    r.first_name || parts[0] || '',
+      lastName:     r.last_name || parts.slice(1).join(' ') || '',
+      name:         fullName,
+      avatar:       r.avatar_url || r.avatar || '',
+      address:      r.address || '',
+      dob:          r.dob || '',
+      age:          r.age ?? '',
+      gender:       r.gender || '',
+      shopName:     r.shop_name || r.business_name || r.retailer_shop || '',
+      role:         r.role || (source === 'retailer_approvals' ? 'retailer' : 'customer'),
       signupMethod: r.signup_method || (r.email ? 'email' : 'phone'),
-      updatedAt: r.updated_at,
-      createdAt: r.created_at
-    }))
-  } catch (err) {
-    console.warn('fetchDbAllUsers error:', err.message)
-    return []
+      updatedAt:    r.updated_at || r.updatedAt || null,
+      createdAt:    r.created_at || r.createdAt || null,
+      _source:      source
+    }
   }
+
+  // Collect rows from every known table
+  const allRows = []
+
+  // 1. user_profiles  (app signups & profile saves)
+  try {
+    const rows = await sql.query(
+      `SELECT * FROM user_profiles ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST`
+    )
+    ;(rows || []).forEach(r => allRows.push(norm(r, 'user_profiles')))
+  } catch (_) {}
+
+  // 2. profiles  (website Better-Auth / legacy website accounts)
+  try {
+    const rows = await sql.query(
+      `SELECT * FROM profiles ORDER BY created_at DESC NULLS LAST LIMIT 500`
+    )
+    ;(rows || []).forEach(r => allRows.push(norm(r, 'profiles')))
+  } catch (_) {}
+
+  // 3. users  (Neon Auth / Better-Auth primary table used by website)
+  try {
+    const rows = await sql.query(
+      `SELECT * FROM users ORDER BY created_at DESC NULLS LAST LIMIT 500`
+    )
+    ;(rows || []).forEach(r => allRows.push(norm(r, 'users')))
+  } catch (_) {}
+
+  // 4. auth_users  (legacy authentication table)
+  try {
+    const rows = await sql.query(
+      `SELECT * FROM auth_users ORDER BY created_at DESC NULLS LAST LIMIT 500`
+    )
+    ;(rows || []).forEach(r => allRows.push(norm(r, 'auth_users')))
+  } catch (_) {}
+
+  // 5. retailer_approvals  (retailers who registered on the website)
+  try {
+    const rows = await sql.query(
+      `SELECT * FROM retailer_approvals ORDER BY created_at DESC NULLS LAST LIMIT 500`
+    )
+    ;(rows || []).forEach(r => allRows.push(norm(r, 'retailer_approvals')))
+  } catch (_) {}
+
+  // ── Deduplicate ─────────────────────────────────────────────────────
+  // Priority: user_profiles > profiles > users > auth_users > retailer_approvals
+  // Key: lower-cased email, then phone, then id
+  const seenEmail = new Map()
+  const seenPhone = new Map()
+  const seenId    = new Map()
+  const merged    = []
+
+  // Source priority order — already pushed in that order above
+  for (const u of allRows) {
+    const emailKey = u.email || null
+    const phoneKey = u.phone || null
+    const idKey    = u.id    || null
+
+    const existsByEmail = emailKey && seenEmail.has(emailKey)
+    const existsByPhone = phoneKey && seenPhone.has(phoneKey)
+    const existsById    = idKey    && seenId.has(idKey)
+
+    if (existsByEmail || existsByPhone || existsById) {
+      // Merge missing fields into the already-stored record
+      const existingRef =
+        (emailKey && seenEmail.get(emailKey)) ||
+        (phoneKey && seenPhone.get(phoneKey)) ||
+        (idKey    && seenId.get(idKey))
+
+      if (existingRef) {
+        // Fill in any blanks from this secondary source
+        if (!existingRef.phone    && u.phone)    existingRef.phone    = u.phone
+        if (!existingRef.avatar   && u.avatar)   existingRef.avatar   = u.avatar
+        if (!existingRef.address  && u.address)  existingRef.address  = u.address
+        if (!existingRef.dob      && u.dob)      existingRef.dob      = u.dob
+        if (!existingRef.gender   && u.gender)   existingRef.gender   = u.gender
+        if (!existingRef.shopName && u.shopName) existingRef.shopName = u.shopName
+        // Upgrade role if found in a more privileged source
+        const roleRank = { admin: 4, staff: 3, delivery_partner: 3, retailer: 2, customer: 1 }
+        if ((roleRank[u.role] || 1) > (roleRank[existingRef.role] || 1)) {
+          existingRef.role = u.role
+        }
+      }
+      continue
+    }
+
+    // New unique user
+    merged.push(u)
+    if (emailKey) seenEmail.set(emailKey, u)
+    if (phoneKey) seenPhone.set(phoneKey, u)
+    if (idKey)    seenId.set(idKey, u)
+  }
+
+  // Sort: most recently updated first
+  merged.sort((a, b) => {
+    const da = a.updatedAt ? new Date(a.updatedAt) : (a.createdAt ? new Date(a.createdAt) : new Date(0))
+    const db = b.updatedAt ? new Date(b.updatedAt) : (b.createdAt ? new Date(b.createdAt) : new Date(0))
+    return db - da
+  })
+
+  return merged
 }
 
 /**
@@ -1106,33 +1217,59 @@ export async function fetchDbAllBookings() {
 }
 
 /**
- * Fetch admin dashboard KPI stats from the database
+ * Fetch admin dashboard KPI stats from the database.
+ * Counts users across ALL tables so the number matches fetchDbAllUsers.
  */
 export async function fetchDbAdminStats() {
   const sql = getDbClient()
   if (!sql) return { totalOrders: 0, totalRevenue: 0, totalUsers: 0, totalProducts: 0, pendingOrders: 0, totalBookings: 0 }
 
   try {
-    const [ordersRes, usersRes, productsRes, bookingsRes] = await Promise.all([
+    const [ordersRes, productsRes, bookingsRes] = await Promise.all([
       sql.query(`SELECT COUNT(*) as total, SUM(total_amount) as revenue, COUNT(*) FILTER (WHERE status ILIKE '%pending%' OR status ILIKE '%awaiting%') as pending FROM orders`).catch(() => [{ total: 0, revenue: 0, pending: 0 }]),
-      sql.query(`SELECT COUNT(*) as total FROM user_profiles`).catch(() => [{ total: 0 }]),
       sql.query(`SELECT COUNT(*) as total FROM products WHERE is_listed = true`).catch(() => [{ total: 0 }]),
       sql.query(`SELECT COUNT(*) as total FROM lab_test_bookings`).catch(() => [{ total: 0 }])
     ])
 
+    // Count unique users across all tables by email (UNION deduplicates)
+    let totalUsers = 0
+    try {
+      const userCountRes = await sql.query(`
+        SELECT COUNT(*) as total FROM (
+          SELECT email FROM user_profiles    WHERE email IS NOT NULL AND email <> ''
+          UNION
+          SELECT email FROM profiles         WHERE email IS NOT NULL AND email <> ''
+          UNION
+          SELECT email FROM users            WHERE email IS NOT NULL AND email <> ''
+          UNION
+          SELECT email FROM auth_users       WHERE email IS NOT NULL AND email <> ''
+          UNION
+          SELECT email FROM retailer_approvals WHERE email IS NOT NULL AND email <> ''
+        ) AS unique_users
+      `)
+      totalUsers = Number(userCountRes[0]?.total || 0)
+    } catch (_) {
+      // Fallback: count just user_profiles
+      try {
+        const fb = await sql.query(`SELECT COUNT(*) as total FROM user_profiles`)
+        totalUsers = Number(fb[0]?.total || 0)
+      } catch (__) {}
+    }
+
     return {
-      totalOrders: Number(ordersRes[0]?.total || 0),
-      totalRevenue: Number(ordersRes[0]?.revenue || 0),
-      pendingOrders: Number(ordersRes[0]?.pending || 0),
-      totalUsers: Number(usersRes[0]?.total || 0),
-      totalProducts: Number(productsRes[0]?.total || 0),
-      totalBookings: Number(bookingsRes[0]?.total || 0)
+      totalOrders:   Number(ordersRes[0]?.total   || 0),
+      totalRevenue:  Number(ordersRes[0]?.revenue  || 0),
+      pendingOrders: Number(ordersRes[0]?.pending  || 0),
+      totalUsers,
+      totalProducts: Number(productsRes[0]?.total  || 0),
+      totalBookings: Number(bookingsRes[0]?.total  || 0)
     }
   } catch (err) {
     console.warn('fetchDbAdminStats error:', err.message)
     return { totalOrders: 0, totalRevenue: 0, totalUsers: 0, totalProducts: 0, pendingOrders: 0, totalBookings: 0 }
   }
 }
+
 
 /**
  * Fetch ALL products (including unlisted) for Admin inventory management
