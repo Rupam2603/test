@@ -299,6 +299,60 @@ export const api = {
       console.warn('getAllUsers db note:', e.message)
       return []
     }
+  },
+
+  // ── Admin-only: All Orders ─────────────────────────────────────────────
+  async getAllOrders() {
+    try {
+      const { fetchDbAllOrders } = await import('./db')
+      return await fetchDbAllOrders()
+    } catch (e) {
+      console.warn('getAllOrders note:', e.message)
+      return []
+    }
+  },
+
+  async updateOrderStatus(orderId, newStatus) {
+    try {
+      const { updateDbOrderStatus } = await import('./db')
+      return await updateDbOrderStatus(orderId, newStatus)
+    } catch (e) {
+      console.warn('updateOrderStatus note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Lab Bookings ───────────────────────────────────────────
+  async getAllBookings() {
+    try {
+      const { fetchDbAllBookings } = await import('./db')
+      return await fetchDbAllBookings()
+    } catch (e) {
+      console.warn('getAllBookings note:', e.message)
+      return []
+    }
+  },
+
+  // ── Admin-only: Dashboard KPI Stats ───────────────────────────────────
+  async getAdminStats() {
+    try {
+      const { fetchDbAdminStats } = await import('./db')
+      return await fetchDbAdminStats()
+    } catch (e) {
+      console.warn('getAdminStats note:', e.message)
+      return { totalOrders: 0, totalRevenue: 0, totalUsers: 0, totalProducts: 0, pendingOrders: 0, totalBookings: 0 }
+    }
+  },
+
+  // ── Admin-only: All Products (including unlisted) ──────────────────────
+  async getAllProducts() {
+    try {
+      const { fetchDbAllProducts } = await import('./db')
+      return await fetchDbAllProducts()
+    } catch (e) {
+      console.warn('getAllProducts note:', e.message)
+      return []
+    }
   }
 }
 

@@ -988,3 +988,196 @@ export async function fetchDbAllUsers() {
     return []
   }
 }
+
+/**
+ * Fetch ALL orders from the database for the Admin Panel (no user filter)
+ */
+export async function fetchDbAllOrders() {
+  const sql = getDbClient()
+  if (!sql) return []
+
+  try {
+    const orders = await sql.query(`
+      SELECT * FROM orders ORDER BY created_at DESC LIMIT 200
+    `)
+    if (!orders || orders.length === 0) return []
+
+    const formattedOrders = await Promise.all(
+      orders.map(async (o) => {
+        let items = []
+        try {
+          items = await sql.query('SELECT * FROM order_items WHERE order_id = $1', [o.id])
+        } catch (e) {}
+
+        let parsedAddr = o.shipping_address
+        if (typeof parsedAddr === 'string') {
+          try { parsedAddr = JSON.parse(parsedAddr) } catch (e) {}
+        }
+
+        const itemsSummary = items.length > 0
+          ? items.map(i => i.product_name || i.name).slice(0, 2).join(' & ') + (items.length > 2 ? ` +${items.length - 2} more` : '')
+          : 'Healthcare essentials'
+
+        const total = Number(o.total_amount || 0)
+
+        return {
+          id: o.id,
+          orderNumber: o.order_number,
+          order_number: o.order_number,
+          userId: o.user_id,
+          customerName: o.customer_name || 'Customer',
+          customerPhone: o.customer_phone || '',
+          shippingAddress: parsedAddr,
+          totalAmount: total,
+          total,
+          paymentMethod: o.payment_method || 'COD',
+          paymentStatus: o.payment_status || 'Pending',
+          status: o.status || 'Out for Delivery',
+          deliveryStatus: o.delivery_status || 'in-transit',
+          invoiceNumber: o.invoice_number || '',
+          shopName: o.shop_name || '',
+          userRole: o.user_role || 'customer',
+          createdAt: o.created_at,
+          itemsCount: items.length > 0 ? items.reduce((acc, i) => acc + (Number(i.quantity) || 1), 0) : 1,
+          itemsSummary,
+          items
+        }
+      })
+    )
+    return formattedOrders
+  } catch (err) {
+    console.warn('fetchDbAllOrders error:', err.message)
+    return []
+  }
+}
+
+/**
+ * Update order status in the database
+ */
+export async function updateDbOrderStatus(orderId, newStatus) {
+  const sql = getDbClient()
+  if (!sql) return false
+
+  try {
+    await sql.query(
+      `UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2`,
+      [newStatus, orderId]
+    )
+    return true
+  } catch (err) {
+    console.warn('updateDbOrderStatus error:', err.message)
+    return false
+  }
+}
+
+/**
+ * Fetch ALL lab test bookings for Admin Panel
+ */
+export async function fetchDbAllBookings() {
+  const sql = getDbClient()
+  if (!sql) return []
+
+  try {
+    const rows = await sql.query(`
+      SELECT * FROM lab_test_bookings ORDER BY created_at DESC LIMIT 100
+    `)
+    return (rows || []).map(r => ({
+      id: r.id,
+      bookingNumber: r.booking_number,
+      userId: r.user_id,
+      packageName: r.package_name,
+      patientName: r.patient_name,
+      patientPhone: r.patient_phone,
+      patientAge: r.patient_age,
+      patientGender: r.patient_gender,
+      collectionDate: r.collection_date,
+      collectionTimeSlot: r.collection_time_slot,
+      totalAmount: Number(r.total_amount || 0),
+      paymentMethod: r.payment_method,
+      paymentStatus: r.payment_status,
+      status: r.status || 'CONFIRMED',
+      fastingConfirmed: r.fasting_confirmed,
+      createdAt: r.created_at
+    }))
+  } catch (err) {
+    console.warn('fetchDbAllBookings error:', err.message)
+    return []
+  }
+}
+
+/**
+ * Fetch admin dashboard KPI stats from the database
+ */
+export async function fetchDbAdminStats() {
+  const sql = getDbClient()
+  if (!sql) return { totalOrders: 0, totalRevenue: 0, totalUsers: 0, totalProducts: 0, pendingOrders: 0, totalBookings: 0 }
+
+  try {
+    const [ordersRes, usersRes, productsRes, bookingsRes] = await Promise.all([
+      sql.query(`SELECT COUNT(*) as total, SUM(total_amount) as revenue, COUNT(*) FILTER (WHERE status ILIKE '%pending%' OR status ILIKE '%awaiting%') as pending FROM orders`).catch(() => [{ total: 0, revenue: 0, pending: 0 }]),
+      sql.query(`SELECT COUNT(*) as total FROM user_profiles`).catch(() => [{ total: 0 }]),
+      sql.query(`SELECT COUNT(*) as total FROM products WHERE is_listed = true`).catch(() => [{ total: 0 }]),
+      sql.query(`SELECT COUNT(*) as total FROM lab_test_bookings`).catch(() => [{ total: 0 }])
+    ])
+
+    return {
+      totalOrders: Number(ordersRes[0]?.total || 0),
+      totalRevenue: Number(ordersRes[0]?.revenue || 0),
+      pendingOrders: Number(ordersRes[0]?.pending || 0),
+      totalUsers: Number(usersRes[0]?.total || 0),
+      totalProducts: Number(productsRes[0]?.total || 0),
+      totalBookings: Number(bookingsRes[0]?.total || 0)
+    }
+  } catch (err) {
+    console.warn('fetchDbAdminStats error:', err.message)
+    return { totalOrders: 0, totalRevenue: 0, totalUsers: 0, totalProducts: 0, pendingOrders: 0, totalBookings: 0 }
+  }
+}
+
+/**
+ * Fetch ALL products (including unlisted) for Admin inventory management
+ */
+export async function fetchDbAllProducts() {
+  const sql = getDbClient()
+  if (!sql) return []
+
+  try {
+    const rows = await sql.query(`
+      SELECT 
+        id, numeric_id, name, subtitle, category_name, brand, sku,
+        mrp, customer_price, retailer_price, discount_percent, stock,
+        image_url, web_image_url, details, is_flash_sale, is_featured,
+        badges, is_listed, created_at, updated_at
+      FROM products
+      ORDER BY numeric_id ASC
+    `)
+
+    return rows.map(row => ({
+      id: row.id,
+      numericId: row.numeric_id,
+      name: row.name,
+      subtitle: row.subtitle || '',
+      category: row.category_name || 'General',
+      brand: row.brand || '',
+      sku: row.sku || '',
+      mrp: Number(row.mrp || 0),
+      price: Number(row.customer_price || row.mrp || 0),
+      retailerPrice: Number(row.retailer_price || 0),
+      discountPercent: Number(row.discount_percent || 0),
+      stock: Number(row.stock || 0),
+      image: row.image_url || row.web_image_url || '',
+      details: row.details || '',
+      isFlashSale: Boolean(row.is_flash_sale),
+      isFeatured: Boolean(row.is_featured),
+      isListed: Boolean(row.is_listed),
+      stockBadge: row.stock <= 0 ? 'Out of Stock' : row.stock <= 15 ? `Only ${row.stock} left` : `${row.stock} in stock`,
+      isLowStock: row.stock <= 15,
+      updatedAt: row.updated_at,
+      createdAt: row.created_at
+    }))
+  } catch (err) {
+    console.warn('fetchDbAllProducts error:', err.message)
+    return []
+  }
+}
+
