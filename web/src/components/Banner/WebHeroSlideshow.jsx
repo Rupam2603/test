@@ -22,27 +22,7 @@ const SLIDES = [
     gradient: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%)',
     borderColor: '#a7f3d0'
   },
-  {
-    id: 2,
-    badge: 'EXPERT CARE & DIAGNOSTIC',
-    tag: '🩺 Licensed Pharmacists',
-    title: 'Instant',
-    titleAccent: 'Prescription Check',
-    titleEnd: '& Express Delivery',
-    accentColor: '#0284c7',
-    buttonColor: '#0284c7',
-    description: "Upload your doctor's prescription for instant verification by licensed clinical pharmacists. Cold-chain storage with batch verification.",
-    primaryBtn: 'Order with Prescription →',
-    secondaryBtn: 'Consult Pharmacist',
-    actionTab: 'services',
-    categoryTarget: 'All',
-    image: '/banners/modern_slide2_prescription.jpg',
-    badgeTop: '100%',
-    badgeSub: 'VERIFIED',
-    badgeLabel: 'Safe Care',
-    gradient: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%)',
-    borderColor: '#bae6fd'
-  },
+
   {
     id: 3,
     badge: 'B2B WHOLESALE PHARMACY',

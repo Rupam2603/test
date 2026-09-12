@@ -269,19 +269,26 @@ export const api = {
     }
   },
 
-  // Users
-  async getUserProfile(userId) {
-    return {
-      id: userId || 'subh_usr_1',
-      name: 'Subhasis',
-      email: 'user@subhone.com',
-      backend: 'Neon PostgreSQL (aws-ap-southeast-1)',
-      branch: BACKEND_CONFIG.neonBranch
+  // Users (Neon Postgres user_profiles)
+  async getUserProfile(userIdOrEmail) {
+    try {
+      const { fetchDbUserProfile } = await import('./db')
+      const profile = await fetchDbUserProfile(userIdOrEmail)
+      if (profile) return profile
+    } catch (e) {
+      console.warn('getUserProfile db note:', e.message)
     }
+    return null
   },
 
-  async updateUserProfile(userId, data) {
-    return { success: true, ...data }
+  async updateUserProfile(profileData) {
+    try {
+      const { saveDbUserProfile } = await import('./db')
+      return await saveDbUserProfile(profileData)
+    } catch (e) {
+      console.warn('updateUserProfile db note:', e.message)
+      return { success: true, ...profileData }
+    }
   }
 }
 

@@ -538,3 +538,198 @@ export async function saveDbAddress(addressData) {
   return { id, userId, label, name, phone, line1, line2, city, state, pincode, isDefault }
 }
 
+/**
+ * Fetch user profile from Neon Postgres
+ */
+export async function fetchDbUserProfile(userIdOrEmailOrPhone) {
+  const sql = getDbClient()
+  if (!sql || !userIdOrEmailOrPhone) return null
+
+  try {
+    // Ensure table exists with dob and signup_method
+    await sql.query(`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id VARCHAR(100) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE,
+        first_name VARCHAR(100),
+        last_name VARCHAR(100),
+        full_name VARCHAR(200),
+        phone VARCHAR(50),
+        avatar_url TEXT,
+        address TEXT,
+        dob VARCHAR(30),
+        age INT,
+        gender VARCHAR(30),
+        shop_name VARCHAR(200),
+        role VARCHAR(50) DEFAULT 'customer',
+        signup_method VARCHAR(20) DEFAULT 'email',
+        updated_at TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `)
+
+    // Ensure columns exist if table was already created
+    try {
+      await sql.query(`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dob VARCHAR(30);`)
+      await sql.query(`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS signup_method VARCHAR(20);`)
+    } catch (colErr) {}
+
+    const queryKey = String(userIdOrEmailOrPhone).toLowerCase().trim()
+    const rows = await sql.query(
+      `SELECT * FROM user_profiles WHERE id = $1 OR email = $1 OR phone = $1 LIMIT 1`,
+      [queryKey]
+    )
+
+    if (rows && rows.length > 0) {
+      const r = rows[0]
+      return {
+        id: r.id,
+        email: r.email || '',
+        phone: r.phone || '',
+        firstName: r.first_name || '',
+        lastName: r.last_name || '',
+        name: r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || r.email?.split('@')[0] || r.phone,
+        avatar: r.avatar_url || '',
+        address: r.address || '',
+        dob: r.dob || '',
+        age: r.age || '',
+        gender: r.gender || '',
+        shopName: r.shop_name || '',
+        role: r.role || 'customer',
+        signupMethod: r.signup_method || (r.email ? 'email' : 'phone')
+      }
+    }
+    return null
+  } catch (err) {
+    console.warn('fetchDbUserProfile note:', err.message)
+    return null
+  }
+}
+
+/**
+ * Save / Update user profile in Neon Postgres
+ */
+export async function saveDbUserProfile(profileData) {
+  const sql = getDbClient()
+  const userId = profileData.id || profileData.email || profileData.phone || 'usr_' + Date.now()
+  const email = (profileData.email || '').toLowerCase().trim()
+  const phone = (profileData.phone || '').trim()
+  const firstName = profileData.firstName || ''
+  const lastName = profileData.lastName || ''
+  const fullName = profileData.name || `${firstName} ${lastName}`.trim() || email.split('@')[0] || phone
+  const avatarUrl = profileData.avatar || ''
+  const address = profileData.address || ''
+  const dob = profileData.dob || ''
+  const age = profileData.age ? parseInt(profileData.age, 10) : null
+  const gender = profileData.gender || ''
+  const shopName = profileData.shopName || ''
+  const role = profileData.role || 'customer'
+  const signupMethod = profileData.signupMethod || (email ? 'email' : 'phone')
+
+  if (sql && (email || phone)) {
+    try {
+      await sql.query(`
+        CREATE TABLE IF NOT EXISTS user_profiles (
+          id VARCHAR(100) PRIMARY KEY,
+          email VARCHAR(255) UNIQUE,
+          first_name VARCHAR(100),
+          last_name VARCHAR(100),
+          full_name VARCHAR(200),
+          phone VARCHAR(50),
+          avatar_url TEXT,
+          address TEXT,
+          dob VARCHAR(30),
+          age INT,
+          gender VARCHAR(30),
+          shop_name VARCHAR(200),
+          role VARCHAR(50) DEFAULT 'customer',
+          signup_method VARCHAR(20) DEFAULT 'email',
+          updated_at TIMESTAMP DEFAULT NOW(),
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `)
+
+      try {
+        await sql.query(`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS dob VARCHAR(30);`)
+        await sql.query(`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS signup_method VARCHAR(20);`)
+      } catch (e) {}
+
+      if (email) {
+        await sql.query(`
+          INSERT INTO user_profiles (
+            id, email, first_name, last_name, full_name, phone,
+            avatar_url, address, dob, age, gender, shop_name, role, signup_method, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6,
+            $7, $8, $9, $10, $11, $12, $13, $14, NOW()
+          )
+          ON CONFLICT (email) DO UPDATE SET
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            full_name = EXCLUDED.full_name,
+            phone = EXCLUDED.phone,
+            avatar_url = EXCLUDED.avatar_url,
+            address = EXCLUDED.address,
+            dob = EXCLUDED.dob,
+            age = EXCLUDED.age,
+            gender = EXCLUDED.gender,
+            shop_name = EXCLUDED.shop_name,
+            role = EXCLUDED.role,
+            signup_method = COALESCE(user_profiles.signup_method, EXCLUDED.signup_method),
+            updated_at = NOW();
+        `, [
+          userId, email, firstName, lastName, fullName, phone,
+          avatarUrl, address, dob, age, gender, shopName, role, signupMethod
+        ])
+      } else {
+        // Fallback for phone-only lookup
+        await sql.query(`
+          INSERT INTO user_profiles (
+            id, email, first_name, last_name, full_name, phone,
+            avatar_url, address, dob, age, gender, shop_name, role, signup_method, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6,
+            $7, $8, $9, $10, $11, $12, $13, $14, NOW()
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            full_name = EXCLUDED.full_name,
+            phone = EXCLUDED.phone,
+            avatar_url = EXCLUDED.avatar_url,
+            address = EXCLUDED.address,
+            dob = EXCLUDED.dob,
+            age = EXCLUDED.age,
+            gender = EXCLUDED.gender,
+            shop_name = EXCLUDED.shop_name,
+            role = EXCLUDED.role,
+            updated_at = NOW();
+        `, [
+          userId, null, firstName, lastName, fullName, phone,
+          avatarUrl, address, dob, age, gender, shopName, role, signupMethod
+        ])
+      }
+    } catch (err) {
+      console.warn('saveDbUserProfile note:', err.message)
+    }
+  }
+
+  const result = {
+    id: userId,
+    email,
+    phone,
+    firstName,
+    lastName,
+    name: fullName,
+    avatar: avatarUrl,
+    address,
+    dob,
+    age,
+    gender,
+    shopName,
+    role,
+    signupMethod
+  }
+
+  return result
+}

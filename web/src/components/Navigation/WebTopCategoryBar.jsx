@@ -4,15 +4,13 @@ export const WEB_CATEGORIES = [
   {
     id: 'all',
     label: 'All',
-    bgColor: '#fff1f2',
-    iconColor: '#e11d48',
-    isSpecialCard: true,
+    circleBg: 'linear-gradient(135deg, #fff1f2, #ffe4e6)',
     renderIcon: () => (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-        <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
-        <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
-        <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
-        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+      <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
+        <rect x="10" y="10" width="8" height="8" rx="2.5" fill="#e11d48" />
+        <rect x="22" y="10" width="8" height="8" rx="2.5" fill="#e11d48" />
+        <rect x="10" y="22" width="8" height="8" rx="2.5" fill="#e11d48" />
+        <rect x="22" y="22" width="8" height="8" rx="2.5" fill="#e11d48" />
       </svg>
     )
   },
@@ -207,82 +205,36 @@ export const WEB_CATEGORIES = [
 ]
 
 export function WebTopCategoryBar({ activeCategory = 'all', onSelectCategory }) {
-  const scrollRef = useRef(null)
-
-  const handleScroll = (offset) => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' })
-    }
-  }
-
   return (
     <div className="web-top-category-strip">
       <div className="web-top-category-container">
-        {/* Scroll Left Button */}
-        <button 
-          className="web-category-scroll-btn prev"
-          onClick={() => handleScroll(-280)}
-          aria-label="Scroll left categories"
-          type="button"
-        >
-          ‹
-        </button>
+        <div className="web-category-scroll-track">
+          <div className="web-category-scroll-inner">
+            {WEB_CATEGORIES.map(cat => {
+              const isSelected = activeCategory === cat.id
 
-        <div className="web-category-scroll-track" ref={scrollRef}>
-          {WEB_CATEGORIES.map(cat => {
-            const isSelected = activeCategory === cat.id
-            const isAll = cat.id === 'all'
-
-            if (isAll) {
               return (
                 <button
                   key={cat.id}
                   type="button"
-                  className={`web-category-item-btn all-card ${isSelected ? 'active' : ''}`}
+                  className={`web-category-item-btn ${isSelected ? 'active' : ''}`}
                   onClick={() => onSelectCategory && onSelectCategory(cat.id)}
                   aria-label={cat.label}
                   aria-pressed={isSelected}
                 >
-                  <div className="all-icon-box">
+                  <div 
+                    className="category-circle-icon-box"
+                    style={{ background: cat.circleBg }}
+                  >
                     {cat.renderIcon()}
                   </div>
                   <span className="category-item-label">{cat.label}</span>
-                  <div className="all-active-indicator" />
+                  {isSelected && <div className="category-active-dot" />}
                 </button>
               )
-            }
-
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                className={`web-category-item-btn ${isSelected ? 'active' : ''}`}
-                onClick={() => onSelectCategory && onSelectCategory(cat.id)}
-                aria-label={cat.label}
-                aria-pressed={isSelected}
-              >
-                <div 
-                  className="category-circle-icon-box"
-                  style={{ background: cat.circleBg }}
-                >
-                  {cat.renderIcon()}
-                </div>
-                <span className="category-item-label">{cat.label}</span>
-                {isSelected && <div className="category-active-dot" />}
-              </button>
-            )
-          })}
+            })}
+          </div>
         </div>
-
-        {/* Scroll Right Button */}
-        <button 
-          className="web-category-scroll-btn next"
-          onClick={() => handleScroll(280)}
-          aria-label="Scroll right categories"
-          type="button"
-        >
-          ›
-        </button>
       </div>
     </div>
   )

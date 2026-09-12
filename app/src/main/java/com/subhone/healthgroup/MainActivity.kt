@@ -93,12 +93,16 @@ class MainActivity : AppCompatActivity() {
         webSettings.displayZoomControls = false
         webSettings.cacheMode = WebSettings.LOAD_DEFAULT
         webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        @Suppress("DEPRECATION")
+        webSettings.allowFileAccessFromFileURLs = true
+        @Suppress("DEPRECATION")
+        webSettings.allowUniversalAccessFromFileURLs = true
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 if (url == null) return false
 
-                val isInternal = url.startsWith(localAssetsUrl) ||
+                val isInternal = url.startsWith("file:///android_asset/") ||
                         url.startsWith("http://localhost:3000") ||
                         url.startsWith("http://10.0.2.2:3000") ||
                         url.startsWith("http://10.0.2.2:5173") ||
@@ -125,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                 error: android.webkit.WebResourceError?
             ) {
                 super.onReceivedError(view, request, error)
-                // If local assets cannot be loaded (shouldn't happen with bundling), fallback to remote URL
+                // If local assets cannot be reached, fallback gracefully to remote URL
                 if (request?.isForMainFrame == true && baseUrl == localAssetsUrl) {
                     view?.loadUrl("$remoteProdUrl?platform=android_app&version=1.0")
                 }

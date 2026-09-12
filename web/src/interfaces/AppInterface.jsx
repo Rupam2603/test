@@ -9,6 +9,7 @@ import AppServiceCard from '../components/App/AppServiceCard'
 import AppBottomNav from '../components/App/AppBottomNav'
 import AppFooterModal from '../components/App/AppFooterModal'
 import AuthPage from '../components/Auth/AuthPage'
+import AccountProfileView from '../components/Account/AccountProfileView'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
 import DeliveryLocationModal from '../components/Location/DeliveryLocationModal'
 import '../styles/app.css'
@@ -530,32 +531,13 @@ export function AppInterface() {
 
         {(activeTab === 'account' || activeTab === 'profile') && (
           <section className="app-tab-section">
-            <div className="app-tab-header">
-              <h2>Wholesale Account & Verification</h2>
-            </div>
             {user ? (
-              <>
-                <div className="app-account-summary-card">
-                  <div className="app-user-avatar-lg">{user.name.charAt(0).toUpperCase()}</div>
-                  <div className="app-account-meta">
-                    <h3>{user.name} ({user.shopName || 'Verified Retailer'})</h3>
-                    <p>{user.email} {user.phone ? `• ${user.phone}` : ''}</p>
-                    <div className="app-account-badges-row">
-                      <span className="app-verified-badge">✓ {user.status === 'PENDING_APPROVAL' ? 'Approval Pending' : 'Wholesale Verified'}</span>
-                      <span className="app-verified-badge">🏛️ Direct Distributor Access</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', margin: '8px 0 14px' }}>
-                  <button
-                    className="app-catalog-white-btn"
-                    style={{ flex: 1, height: '38px', fontSize: '12.5px', color: '#ef4444', borderColor: '#fca5a5' }}
-                    onClick={handleLogout}
-                  >
-                    🚪 Logout ({user.name})
-                  </button>
-                </div>
-              </>
+              <AccountProfileView
+                user={user}
+                onUpdateUser={(updated) => setUser(updated)}
+                onLogout={handleLogout}
+                showToast={showToast}
+              />
             ) : (
               <div className="app-account-summary-card" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%' }}>

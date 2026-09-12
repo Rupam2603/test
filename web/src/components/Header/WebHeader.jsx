@@ -13,34 +13,35 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
 
   return (
     <header className="web-header">
-      <div className="web-header-container">
-        {/* Left Section: Menu Toggle + SubhOne Brand Logo */}
-        <div className="web-header-left">
+      <div className="header-container">
+        {/* Left cluster with Menu Icon Trigger + Brand Logo */}
+        <div className="header-brand-cluster">
           <button 
-            type="button" 
-            className="menu-toggle-btn" 
+            type="button"
+            className={`web-menu-trigger-btn ${isMenuOpen ? 'open' : ''}`}
             onClick={onToggleMenu}
-            aria-label={isMenuOpen ? "Close category navigation menu" : "Open category navigation menu"}
-            title="Browse Categories & Health Departments"
+            aria-label="Toggle navigation menu"
+            title="Open Menu"
           >
-            <span className="hamburger-icon">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-            <span className="menu-btn-label">Menu</span>
+            <div className="menu-hamburger-lines">
+              <span className="line line-1"></span>
+              <span className="line line-2"></span>
+              <span className="line line-3"></span>
+            </div>
+            <span className="menu-trigger-label">Menu</span>
           </button>
 
           <div 
-            className="web-brand-logo" 
-            onClick={() => onTabChange && onTabChange('home')}
+            className="web-brand-logo-group" 
+            onClick={() => onTabChange && onTabChange('home')} 
             role="button"
             tabIndex={0}
+            title="SubhOne Health Group - Home"
           >
             <img 
-              src="https://zdqomjcgmst0grfw.public.blob.vercel-storage.com/products/image_1788243981535.webp" 
+              src="/subhone_logo.png" 
               alt="SubhOne Health Group Logo" 
-              className="logo-mark"
+              className="web-header-brand-icon"
               onError={(e) => {
                 e.target.style.display = 'none'
               }}
@@ -52,30 +53,6 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
           </div>
         </div>
 
-        {/* User Delivery Address Pill (Locates user's current location for delivery address) */}
-        <div 
-          className="header-location-pill" 
-          onClick={onOpenLocation || onOpenTracker} 
-          role="button" 
-          tabIndex={0}
-          title="Delivery Address: Click to locate your current location or change address"
-        >
-          <div className="location-pin-wrap">
-            <span className="location-pin-icon">📍</span>
-            <span className="location-pulse-ring"></span>
-          </div>
-          <div className="location-text-stack">
-            <div className="location-title-row">
-              <span className="location-title">
-                {location?.isExact ? 'Deliver to (Current)' : 'Deliver to'}
-              </span>
-              <span className="ten-min-badge">⚡ 10 MINS</span>
-            </div>
-            <span className="location-address-preview">
-              {location?.loading ? 'Detecting GPS...' : (location?.shortName || location?.address || 'Select Delivery Location')}
-            </span>
-          </div>
-        </div>
 
         {/* Global Search Bar */}
         <form className="web-header-search-form" onSubmit={handleSearchSubmit}>
@@ -109,17 +86,32 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
 
         {/* Header Actions & Auth */}
         <div className="header-actions">
-          <div className="header-wholesale-pill" title="Licensed Healthcare Wholesale Network">
-            <span className="pill-dot"></span>
-            <span className="pill-text">B2B Verified</span>
-          </div>
+          {/* User Delivery Address Button - Compact Icon */}
+          <button 
+            type="button"
+            className="header-location-icon-btn" 
+            onClick={onOpenLocation || onOpenTracker} 
+            title={location?.address ? `Deliver to: ${location.address}` : "Click to select delivery location"}
+            aria-label="Delivery Location"
+          >
+            <div className="location-pin-wrap">
+              <span className="location-pin-icon">📍</span>
+              <span className="location-pulse-ring"></span>
+            </div>
+          </button>
 
           {user ? (
             <div className="user-menu">
-              <div className="user-avatar-pill">
+              <button 
+                type="button"
+                className="user-avatar-pill"
+                onClick={() => onTabChange && onTabChange('account')}
+                title="Click to view Account & Profile"
+                aria-label="View Account Profile"
+              >
                 <span className="user-avatar-char">{user.name ? user.name[0].toUpperCase() : 'U'}</span>
                 <span className="user-name-text">{user.name}</span>
-              </div>
+              </button>
               <button 
                 className="logout-btn" 
                 onClick={() => {

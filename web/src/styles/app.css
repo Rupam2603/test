@@ -378,52 +378,6 @@
   display: none;
 }
 
-/* Active "All" Card */
-.app-filter-item-card.active-all-card {
-  background: linear-gradient(180deg, #fff5f7 0%, #ffedf1 100%);
-  border: 1.5px solid #fecdd3;
-  border-radius: 18px;
-  padding: 8px 12px 6px 12px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  min-width: 66px;
-  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.1);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.app-filter-item-card.active-all-card:active {
-  transform: scale(0.95);
-}
-
-.app-all-card-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.app-all-icon-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-}
-
-.app-all-label {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #e11d48;
-  margin-top: 4px;
-  line-height: 1.1;
-  letter-spacing: 0.1px;
-}
-
-.app-all-underline {
   width: 26px;
   height: 3px;
   background: #e11d48;

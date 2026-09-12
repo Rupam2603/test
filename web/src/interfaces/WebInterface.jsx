@@ -8,12 +8,11 @@ import WebTopCategoryBar from '../components/Navigation/WebTopCategoryBar'
 import WebHeroSlideshow from '../components/Banner/WebHeroSlideshow'
 import CategoryWiseHomeSection from '../components/Home/CategoryWiseHomeSection'
 import ProductCard from '../components/ProductCard'
-import ServiceCard from '../components/ServiceCard'
+import ProductDetails from '../components/ProductDetails'
 import AuthPage from '../components/Auth/AuthPage'
+import AccountProfileView from '../components/Account/AccountProfileView'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
 import DeliveryLocationModal from '../components/Location/DeliveryLocationModal'
-import PrescriptionUploadModal from '../components/Prescription/PrescriptionUploadModal'
-import DiagnosticBookingModal from '../components/Diagnostics/DiagnosticBookingModal'
 import AddressManagementModal from '../components/Account/AddressManagementModal'
 import OrderSuccessModal from '../components/Cart/OrderSuccessModal'
 import '../styles/web.css'
@@ -29,25 +28,19 @@ export function WebInterface() {
   })
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [products, setProducts] = useState([])
-  const [services, setServices] = useState([])
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [topCategory, setTopCategory] = useState('all')
+  const [selectedProduct, setSelectedProduct] = useState(null)
   const { location, detectLocation, selectAddress } = useCurrentLocation()
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
-  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
-  const [selectedDiagnostic, setSelectedDiagnostic] = useState(null)
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [createdOrder, setCreatedOrder] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
-  const [cartItems, setCartItems] = useState([
-    { id: 'c48e3a34-f6f0-412b-8493-ce3e07133bfb', name: 'Volini Pain Relief Gel 15g', pack: '15g Tube', price: 15, qty: 2, image: 'https://zdqomjcgmst0grfw.public.blob.vercel-storage.com/products/image_1788243981535.webp' },
-    { id: '80b9e3b8-e91a-4163-b883-22721f505e47', name: 'Dettol Antiseptic Liquid 250ml', pack: '250ml Bottle', price: 155, qty: 1, image: 'https://zdqomjcgmst0grfw.public.blob.vercel-storage.com/products/image_1788418118653.webp' }
-  ])
+  const [cartItems, setCartItems] = useState([])
   const [user, setUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('subhone_auth_user') || 'null')
@@ -66,10 +59,6 @@ export function WebInterface() {
       const data = await api.getProducts()
       const listedOnly = (data || []).filter(p => p.is_listed !== false && p.isListed !== false)
       setProducts(listedOnly)
-    }
-    if (activeTab === 'services' || activeTab === 'home') {
-      const data = await api.getServices()
-      setServices(data || [])
     }
     if (activeTab === 'order' || activeTab === 'bookings' || activeTab === 'home') {
       try {
@@ -151,7 +140,7 @@ export function WebInterface() {
           pack: product.pack || product.subtitle || 'Standard pack',
           price: product.price,
           qty: 1,
-          image: product.image?.includes('http') ? '💊' : (product.icon || '💊')
+          image: product.image || product.icon || '💊'
         }
       ]
     })
@@ -247,9 +236,9 @@ export function WebInterface() {
               setSelectedCategory('All')
             } else {
               setSelectedCategory(catId)
-              if (activeTab !== 'category' && activeTab !== 'home') {
-                setActiveTab('category')
-              }
+            }
+            if (activeTab !== 'category') {
+              setActiveTab('category')
             }
           }} 
         />
@@ -280,24 +269,20 @@ export function WebInterface() {
                   {/* Category-Wise Decorated Sections (Strictly Listed Products Only) */}
                   <CategoryWiseHomeSection 
                     products={products}
-                    services={services}
                     onSelectCategory={(catId) => {
                       setTopCategory(catId)
                       if (catId === 'all') {
                         setSelectedCategory('All')
                       } else {
                         setSelectedCategory(catId)
-                        setActiveTab('category')
                       }
+                      setActiveTab('category')
+                    }}
+                    onSelectProduct={(p) => {
+                      setSelectedProduct(p)
+                      setActiveTab('product')
                     }}
                     onAddToCart={handleAddToCart}
-                    onBookService={(pkg) => {
-                      setSelectedDiagnostic(pkg || services[0])
-                      setIsBookingModalOpen(true)
-                    }}
-                    onUploadPrescription={() => {
-                      setIsPrescriptionModalOpen(true)
-                    }}
                   />
                 </div>
               )}
@@ -330,32 +315,23 @@ export function WebInterface() {
                         key={p.id} 
                         product={p} 
                         onAddToCart={handleAddToCart} 
+                        onSelectProduct={(product) => {
+                          setSelectedProduct(product)
+                          setActiveTab('product')
+                        }}
                       />
                     ))}
                   </div>
                 </section>
               )}
 
-              {/* Services Tab */}
-              {activeTab === 'services' && (
-                <section className="catalog-section">
-                  <div className="section-title-bar">
-                    <h2>Diagnostic & Clinical Services</h2>
-                    <p>Accurate pathological tests, health screenings, and doctor consultations.</p>
-                  </div>
-                  <div className="service-grid">
-                    {services.map(s => (
-                      <ServiceCard 
-                        key={s.id} 
-                        service={s} 
-                        onBook={(serviceItem) => {
-                          setSelectedDiagnostic(serviceItem)
-                          setIsBookingModalOpen(true)
-                        }} 
-                      />
-                    ))}
-                  </div>
-                </section>
+              {/* Product Details Tab */}
+              {activeTab === 'product' && selectedProduct && (
+                <ProductDetails 
+                  product={selectedProduct} 
+                  onAddToCart={handleAddToCart} 
+                  onBack={() => setActiveTab('home')} 
+                />
               )}
 
               {/* Cart Tab */}
@@ -378,7 +354,11 @@ export function WebInterface() {
                       <div className="web-cart-items-list">
                         {cartItems.map(item => (
                           <div key={item.id} className="web-cart-item-card">
-                            <div className="web-cart-item-avatar">{item.image}</div>
+                            <div className="web-cart-item-avatar">
+                              {item.image?.includes('http') || item.image?.includes('/') 
+                                ? <img src={item.image} alt={item.name} className="web-cart-item-img" /> 
+                                : item.image}
+                            </div>
                             <div className="web-cart-item-info">
                               <h4 className="web-cart-item-title">{item.name}</h4>
                               <p className="web-cart-item-pack">{item.pack}</p>
@@ -461,8 +441,8 @@ export function WebInterface() {
               {(activeTab === 'order' || activeTab === 'bookings') && (
                 <section className="catalog-section web-orders-view">
                   <div className="section-title-bar">
-                    <h2>Orders & Health Bookings</h2>
-                    <p>Track your medicine shipments, lab test appointments, and active prescriptions directly from the database.</p>
+                    <h2>Orders</h2>
+                    <p>Track your medicine shipments directly from the database.</p>
                   </div>
 
                   {orders.length === 0 ? (
@@ -545,62 +525,17 @@ export function WebInterface() {
 
               {/* Account Tab */}
               {(activeTab === 'account' || activeTab === 'profile') && (
-                <section className="catalog-section web-account-view">
-                  <div className="section-title-bar">
-                    <h2>Account & Healthcare Profile</h2>
-                    <p>Manage your health credits, patient family profiles, and prescriptions.</p>
-                  </div>
-
-                  <div className="web-account-grid">
-                    <div className="web-account-card main-profile">
-                      <div className="account-avatar-banner">
-                        <div className="account-avatar">👨‍⚕️</div>
-                        <div>
-                          <h3>{user?.name || 'Subhasis'}</h3>
-                          <p>{user?.email || 'subhasis@subhone.com'}</p>
-                          <span className="membership-badge">⭐ SubhOne Platinum Health Member</span>
-                        </div>
-                      </div>
-
-                      <div className="account-quick-stats">
-                        <div className="stat-box">
-                          <span className="stat-num">₹450</span>
-                          <span className="stat-title">Health Wallet</span>
-                        </div>
-                        <div className="stat-box">
-                          <span className="stat-num">{orders.length || 12}</span>
-                          <span className="stat-title">Orders Placed</span>
-                        </div>
-                        <div className="stat-box">
-                          <span className="stat-num">3</span>
-                          <span className="stat-title">Prescriptions</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="web-account-card settings-card">
-                      <h4 className="card-subheading">Account Quick Shortcuts</h4>
-                      <ul className="account-menu-list">
-                        <li>
-                          <span>📍 Saved Delivery Addresses</span>
-                          <button className="link-action-btn" onClick={() => setIsAddressModalOpen(true)}>Manage</button>
-                        </li>
-                        <li>
-                          <span>📑 Uploaded Prescriptions & Records</span>
-                          <button className="link-action-btn" onClick={() => setIsPrescriptionModalOpen(true)}>View / Upload</button>
-                        </li>
-                        <li>
-                          <span>🩺 Linked Family Patients</span>
-                          <button className="link-action-btn" onClick={() => showToast('Family Profiles: Subhasis (Self), Parents (Active)')}>2 Members</button>
-                        </li>
-                        <li>
-                          <span>🔒 Security & Privacy</span>
-                          <button className="link-action-btn" onClick={() => showToast('Two-Factor Authentication & Encrypted DB Active')}>Verified</button>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </section>
+                <AccountProfileView
+                  user={user}
+                  onUpdateUser={(updated) => setUser(updated)}
+                  onLogout={() => {
+                    localStorage.removeItem('subhone_auth_user')
+                    setUser(null)
+                    setActiveTab('home')
+                    window.location.reload()
+                  }}
+                  showToast={showToast}
+                />
               )}
             </>
           )}
@@ -621,28 +556,6 @@ export function WebInterface() {
       />
 
       {/* Interactive Backend Modals */}
-      <PrescriptionUploadModal
-        isOpen={isPrescriptionModalOpen}
-        onClose={() => setIsPrescriptionModalOpen(false)}
-        onUploaded={(res) => {
-          showToast(`Prescription #${res.prescriptionId} uploaded to database!`)
-        }}
-        user={user}
-      />
-
-      <DiagnosticBookingModal
-        isOpen={isBookingModalOpen}
-        onClose={() => {
-          setIsBookingModalOpen(false)
-          setSelectedDiagnostic(null)
-        }}
-        initialService={selectedDiagnostic}
-        user={user}
-        onBookingSuccess={(booking) => {
-          showToast(`Diagnostic booking #${booking.booking_reference} confirmed!`)
-          loadData()
-        }}
-      />
 
       <AddressManagementModal
         isOpen={isAddressModalOpen}

@@ -32,8 +32,11 @@ export function useCurrentLocation() {
   const reverseGeocode = async (lat, lng) => {
     if (!GOOGLE_MAPS_KEY) {
       return {
-        address: `Near ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E (Kolkata)`,
-        shortName: 'Kolkata Central',
+        address: `Near ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`,
+        shortName: 'Exact GPS Location',
+        street: `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+        city: 'Kolkata',
+        state: 'West Bengal',
         pincode: '700016'
       }
     }
@@ -71,9 +74,9 @@ export function useCurrentLocation() {
     }
 
     return {
-      address: 'Park Street Crossing, Kolkata, West Bengal 700016',
-      shortName: 'Park Street, Kolkata',
-      street: 'Park Street',
+      address: `Near ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`,
+      shortName: 'Exact GPS Location',
+      street: `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
       city: 'Kolkata',
       state: 'West Bengal',
       pincode: '700016'

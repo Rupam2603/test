@@ -44,6 +44,25 @@ android {
     }
 }
 
+tasks.register<Exec>("buildWebAssets") {
+    workingDir = file("../web")
+    if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
+        commandLine("cmd", "/c", "npm run build")
+    } else {
+        commandLine("npm", "run", "build")
+    }
+}
+
+tasks.register<Copy>("copyWebAssets") {
+    dependsOn("buildWebAssets")
+    from("../web/dist")
+    into("src/main/assets/www")
+}
+
+tasks.named("preBuild") {
+    dependsOn("copyWebAssets")
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")

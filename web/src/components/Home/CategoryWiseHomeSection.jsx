@@ -5,17 +5,14 @@ import {
   IMMUNITY_WELLNESS_PRODUCTS,
   MEDICAL_SUPPLIES_PRODUCTS,
   MENS_HEALTH_PRODUCTS,
-  DIAGNOSTIC_PACKAGES,
   TRUST_FEATURES
 } from '../../data/homeCategoriesData'
 
 export function CategoryWiseHomeSection({ 
   products = [], 
-  services = [], 
   onSelectCategory, 
-  onAddToCart, 
-  onBookService,
-  onUploadPrescription 
+  onSelectProduct,
+  onAddToCart 
 }) {
   // Filter only strictly listed products (is_listed !== false)
   const listedOnly = products.filter(p => p.is_listed !== false && p.isListed !== false)
@@ -37,22 +34,6 @@ export function CategoryWiseHomeSection({
 
   const dbMens = listedOnly.filter(p => p.category?.toLowerCase().includes('men'))
   const mensProducts = dbMens.length > 0 ? dbMens.slice(0, 4) : MENS_HEALTH_PRODUCTS
-
-  // Diagnostics: use database lab_packages if available
-  const diagnosticsList = services && services.length > 0 
-    ? services.slice(0, 3).map(s => ({
-        id: s.id,
-        name: s.name,
-        badge: s.badge || 'NABL Lab',
-        cert: 'NABL Certified Lab',
-        includes: s.description || 'Comprehensive Pathology Testing',
-        duration: s.duration || 'Fast 20 mins Sample Collection',
-        reportTime: s.reportTurnaround || 'Digital Report within 24 Hours',
-        price: s.price,
-        mrp: s.mrp || (s.price * 2),
-        discount: s.mrp ? Math.round(((s.mrp - s.price)/s.mrp)*100) + '% OFF' : '50% OFF'
-      }))
-    : DIAGNOSTIC_PACKAGES
 
   return (
     <div className="category-wise-home-wrapper">
@@ -119,7 +100,11 @@ export function CategoryWiseHomeSection({
 
         <div className="home-product-shelf-grid">
           {painProducts.map(item => (
-            <div key={item.id} className="home-curated-product-card">
+            <div 
+              key={item.id} 
+              className={`home-curated-product-card ${onSelectProduct ? 'clickable' : ''}`}
+              onClick={() => onSelectProduct && onSelectProduct(item)}
+            >
               <div className="product-card-media">
                 <span className="product-discount-chip">{item.discount || 'Special Price'}</span>
                 <img src={item.image} alt={item.name} loading="lazy" />
@@ -141,7 +126,10 @@ export function CategoryWiseHomeSection({
                   <button
                     type="button"
                     className="shelf-add-cart-btn"
-                    onClick={() => onAddToCart && onAddToCart(item)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToCart && onAddToCart(item)
+                    }}
                     title={"Add " + item.name + " to cart"}
                   >
                     + Add
@@ -153,38 +141,6 @@ export function CategoryWiseHomeSection({
         </div>
       </section>
 
-      {/* 3. Prescription Upload Callout Banner */}
-      <section className="home-prescription-callout-banner">
-        <div className="prescription-banner-content">
-          <div className="prescription-badge">
-            <span>📋 CLINICAL PHARMACY SERVICE</span>
-          </div>
-          <h3>Have a Doctor's Prescription?</h3>
-          <p>
-            Upload your prescription directly. Our registered clinical pharmacists will review, verify, and pack your medicines with 100% genuine batch verification.
-          </p>
-          <div className="prescription-actions">
-            <button 
-              type="button" 
-              className="prescription-upload-btn"
-              onClick={() => onUploadPrescription ? onUploadPrescription() : onSelectCategory('all')}
-            >
-              Upload Prescription 📄
-            </button>
-            <button 
-              type="button" 
-              className="prescription-call-btn"
-              onClick={() => alert('SubhOne Pharmacy Helpline: +91 1800-202-9900')}
-            >
-              📞 1800-202-9900 (Toll-Free)
-            </button>
-          </div>
-        </div>
-        <div className="prescription-banner-art">
-          <div className="art-pill-circle">💊</div>
-          <div className="art-badge-verified">✓ 100% Verified</div>
-        </div>
-      </section>
 
       {/* 4. Category Shelf 2: Daily Wellness & Immunity */}
       <section className="home-shelf-section">
@@ -208,7 +164,11 @@ export function CategoryWiseHomeSection({
 
         <div className="home-product-shelf-grid">
           {wellnessProducts.map(item => (
-            <div key={item.id} className="home-curated-product-card">
+            <div 
+              key={item.id} 
+              className={`home-curated-product-card ${onSelectProduct ? 'clickable' : ''}`}
+              onClick={() => onSelectProduct && onSelectProduct(item)}
+            >
               <div className="product-card-media">
                 <span className="product-discount-chip green">{item.discount || 'Special Offer'}</span>
                 <img src={item.image} alt={item.name} loading="lazy" />
@@ -230,7 +190,10 @@ export function CategoryWiseHomeSection({
                   <button
                     type="button"
                     className="shelf-add-cart-btn"
-                    onClick={() => onAddToCart && onAddToCart(item)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToCart && onAddToCart(item)
+                    }}
                     title={"Add " + item.name + " to cart"}
                   >
                     + Add
@@ -242,67 +205,6 @@ export function CategoryWiseHomeSection({
         </div>
       </section>
 
-      {/* 5. Category Shelf 3: Diagnostic & Clinical Pathology Packages */}
-      <section className="home-shelf-section diagnostics-shelf">
-        <div className="shelf-header">
-          <div>
-            <div className="shelf-badge-row">
-              <span className="shelf-pill-tag purple">🧪 NABL ACCREDITED LABS</span>
-              <span className="shelf-meta-text">Certified Laboratory Testing</span>
-            </div>
-            <h3 className="shelf-title">Diagnostic Health Packages</h3>
-            <p className="shelf-subtitle">Certified medical laboratory tests with digital reports and free home collection.</p>
-          </div>
-          <button 
-            type="button" 
-            className="shelf-view-all-btn"
-            onClick={() => onBookService && onBookService()}
-          >
-            View Diagnostics →
-          </button>
-        </div>
-
-        <div className="home-diagnostics-shelf-grid">
-          {diagnosticsList.map(pkg => (
-            <div key={pkg.id} className="home-diagnostic-card">
-              <div className="diagnostic-card-header">
-                <span className="diag-badge-pill">{pkg.badge}</span>
-                <span className="diag-cert-text">✓ {pkg.cert}</span>
-              </div>
-              <h4 className="diag-package-name">{pkg.name || pkg.title}</h4>
-              <p className="diag-includes-text">{pkg.includes || pkg.summary}</p>
-              
-              <div className="diag-features-list">
-                <div className="diag-feature-item">
-                  <span>⏱️</span>
-                  <span>{pkg.duration}</span>
-                </div>
-                <div className="diag-feature-item">
-                  <span>📑</span>
-                  <span>{pkg.reportTime || pkg.turnaround}</span>
-                </div>
-              </div>
-
-              <div className="diag-card-footer">
-                <div className="diag-price-group">
-                  <div className="diag-main-price">
-                    <span className="price-val">₹{pkg.price}</span>
-                    <span className="mrp-val">₹{pkg.mrp}</span>
-                  </div>
-                  <span className="diag-discount-tag">{pkg.discount}</span>
-                </div>
-                <button
-                  type="button"
-                  className="diag-book-btn"
-                  onClick={() => onBookService && onBookService(pkg)}
-                >
-                  Book Test →
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* 6. Category Shelf 4: Medical Supplies, Antiseptics & Digestive Care */}
       <section className="home-shelf-section">
@@ -326,7 +228,11 @@ export function CategoryWiseHomeSection({
 
         <div className="home-product-shelf-grid">
           {suppliesProducts.map(item => (
-            <div key={item.id} className="home-curated-product-card">
+            <div 
+              key={item.id} 
+              className={`home-curated-product-card ${onSelectProduct ? 'clickable' : ''}`}
+              onClick={() => onSelectProduct && onSelectProduct(item)}
+            >
               <div className="product-card-media">
                 <span className="product-discount-chip orange">{item.discount || 'In Stock'}</span>
                 <img src={item.image} alt={item.name} loading="lazy" />
@@ -348,7 +254,10 @@ export function CategoryWiseHomeSection({
                   <button
                     type="button"
                     className="shelf-add-cart-btn"
-                    onClick={() => onAddToCart && onAddToCart(item)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToCart && onAddToCart(item)
+                    }}
                     title={"Add " + item.name + " to cart"}
                   >
                     + Add
@@ -382,7 +291,11 @@ export function CategoryWiseHomeSection({
 
         <div className="home-product-shelf-grid">
           {mensProducts.map(item => (
-            <div key={item.id} className="home-curated-product-card">
+            <div 
+              key={item.id} 
+              className={`home-curated-product-card ${onSelectProduct ? 'clickable' : ''}`}
+              onClick={() => onSelectProduct && onSelectProduct(item)}
+            >
               <div className="product-card-media">
                 <span className="product-discount-chip">{item.discount || '15% OFF'}</span>
                 <img src={item.image} alt={item.name} loading="lazy" />
@@ -404,7 +317,10 @@ export function CategoryWiseHomeSection({
                   <button
                     type="button"
                     className="shelf-add-cart-btn"
-                    onClick={() => onAddToCart && onAddToCart(item)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToCart && onAddToCart(item)
+                    }}
                     title={"Add " + item.name + " to cart"}
                   >
                     + Add

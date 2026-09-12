@@ -77,13 +77,32 @@ export function AuthPage({
         }
       }
 
-      // Format authenticated user
+      let dbProfile = null
+      if (sql) {
+        try {
+          const { fetchDbUserProfile } = await import('../../services/db')
+          dbProfile = await fetchDbUserProfile(email.toLowerCase().trim())
+        } catch (dbErr) {
+          console.warn('user_profiles login query note:', dbErr.message)
+        }
+      }
+
       const userPayload = {
-        id: verifiedUser?.id || 'usr_' + Date.now(),
-        name: verifiedUser?.full_name || email.split('@')[0],
-        role: 'retailer',
+        id: dbProfile?.id || verifiedUser?.id || 'usr_' + Date.now(),
+        name: dbProfile?.name || verifiedUser?.full_name || email.split('@')[0],
+        firstName: dbProfile?.firstName || '',
+        lastName: dbProfile?.lastName || '',
+        email: email.toLowerCase().trim(),
+        phone: dbProfile?.phone || '',
+        avatar: dbProfile?.avatar || '',
+        address: dbProfile?.address || '',
+        dob: dbProfile?.dob || '',
+        age: dbProfile?.age || '',
+        gender: dbProfile?.gender || '',
+        role: dbProfile?.role || 'retailer',
         portal: 'retailer',
-        shopName: verifiedUser?.shop_name || 'SubhOne Partner Store',
+        shopName: dbProfile?.shopName || verifiedUser?.shop_name || 'SubhOne Partner Store',
+        signupMethod: dbProfile?.signupMethod || 'email',
         isVerified: true,
         loginAt: new Date().toISOString()
       }
@@ -154,14 +173,70 @@ export function AuthPage({
         }
       }
 
+      // Save directly to user_profiles table as well
+      const signupMethod = email.trim() ? 'email' : 'phone'
+      const nameParts = fullName.trim().split(' ')
+      const fName = nameParts[0] || ''
+      const lName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+
+      if (sql) {
+        try {
+          await sql.query(`
+            CREATE TABLE IF NOT EXISTS user_profiles (
+              id VARCHAR(100) PRIMARY KEY,
+              email VARCHAR(255) UNIQUE,
+              first_name VARCHAR(100),
+              last_name VARCHAR(100),
+              full_name VARCHAR(200),
+              phone VARCHAR(50),
+              avatar_url TEXT,
+              address TEXT,
+              dob VARCHAR(30),
+              age INT,
+              gender VARCHAR(30),
+              shop_name VARCHAR(200),
+              role VARCHAR(50) DEFAULT 'customer',
+              signup_method VARCHAR(20) DEFAULT 'email',
+              updated_at TIMESTAMP DEFAULT NOW(),
+              created_at TIMESTAMP DEFAULT NOW()
+            );
+          `)
+          await sql.query(`
+            INSERT INTO user_profiles (
+              id, email, first_name, last_name, full_name, phone, shop_name, role, signup_method, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+            ON CONFLICT (email) DO UPDATE SET
+              full_name = EXCLUDED.full_name,
+              phone = COALESCE(EXCLUDED.phone, user_profiles.phone),
+              shop_name = COALESCE(EXCLUDED.shop_name, user_profiles.shop_name),
+              updated_at = NOW();
+          `, [
+            'usr_' + Date.now(),
+            email.trim().toLowerCase(),
+            fName,
+            lName,
+            fullName.trim(),
+            phone.trim() || null,
+            shopName.trim() || null,
+            'retailer',
+            signupMethod
+          ])
+        } catch (profErr) {
+          console.warn('user_profiles sync note:', profErr.message)
+        }
+      }
+
       const userPayload = {
         id: 'usr_' + Date.now(),
         name: fullName.trim(),
+        firstName: fName,
+        lastName: lName,
         email: email.trim(),
         phone: phone.trim(),
         shopName: shopName.trim(),
         role: 'retailer',
         portal: 'retailer',
+        signupMethod: signupMethod,
         isVerified: false,
         status: 'PENDING_APPROVAL',
         registeredAt: new Date().toISOString()
