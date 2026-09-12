@@ -575,8 +575,8 @@ export async function fetchDbUserProfile(userIdOrEmailOrPhone) {
     } catch (colErr) {}
 
     const queryKey = String(userIdOrEmailOrPhone).toLowerCase().trim()
-    const rows = await sql.query(
-      `SELECT * FROM user_profiles WHERE id = $1 OR email = $1 OR phone = $1 LIMIT 1`,
+    let rows = await sql.query(
+      `SELECT * FROM user_profiles WHERE LOWER(id) = $1 OR LOWER(email) = $1 OR phone = $1 LIMIT 1`,
       [queryKey]
     )
 
@@ -599,6 +599,65 @@ export async function fetchDbUserProfile(userIdOrEmailOrPhone) {
         signupMethod: r.signup_method || (r.email ? 'email' : 'phone')
       }
     }
+
+    // Fallback: check website 'profiles' table if created through legacy website auth
+    try {
+      const profRows = await sql.query(
+        `SELECT * FROM profiles WHERE LOWER(id) = $1 OR LOWER(email) = $1 OR phone = $1 LIMIT 1`,
+        [queryKey]
+      )
+      if (profRows && profRows.length > 0) {
+        const pr = profRows[0]
+        const fullName = pr.full_name || pr.name || pr.email?.split('@')[0] || 'User'
+        const parts = fullName.split(' ')
+        return {
+          id: pr.id,
+          email: pr.email || '',
+          phone: pr.phone || '',
+          firstName: parts[0] || '',
+          lastName: parts.slice(1).join(' ') || '',
+          name: fullName,
+          avatar: pr.avatar_url || '',
+          address: pr.address || '',
+          dob: pr.dob || '',
+          age: pr.age || '',
+          gender: pr.gender || '',
+          shopName: pr.shop_name || '',
+          role: pr.role || 'customer',
+          signupMethod: pr.email ? 'email' : 'phone'
+        }
+      }
+    } catch (e) {}
+
+    // Fallback: check retailer_approvals table if registered as retailer on website
+    try {
+      const retRows = await sql.query(
+        `SELECT * FROM retailer_approvals WHERE LOWER(id) = $1 OR LOWER(email) = $1 OR phone = $1 LIMIT 1`,
+        [queryKey]
+      )
+      if (retRows && retRows.length > 0) {
+        const rr = retRows[0]
+        const fullName = rr.retailer_name || rr.email?.split('@')[0] || 'Retailer'
+        const parts = fullName.split(' ')
+        return {
+          id: rr.id,
+          email: rr.email || '',
+          phone: rr.phone || '',
+          firstName: parts[0] || '',
+          lastName: parts.slice(1).join(' ') || '',
+          name: fullName,
+          avatar: '',
+          address: '',
+          dob: '',
+          age: '',
+          gender: '',
+          shopName: rr.shop_name || '',
+          role: 'retailer',
+          signupMethod: rr.email ? 'email' : 'phone'
+        }
+      }
+    } catch (e) {}
+
     return null
   } catch (err) {
     console.warn('fetchDbUserProfile note:', err.message)

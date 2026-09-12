@@ -82,7 +82,24 @@ export function AppInterface() {
   useEffect(() => {
     loadCatalog()
     checkConnection()
+    syncUserProfile()
   }, [])
+
+  async function syncUserProfile() {
+    try {
+      const queryKey = user?.email || user?.phone || user?.id
+      if (queryKey) {
+        const dbProfile = await api.getUserProfile(queryKey)
+        if (dbProfile) {
+          const updated = { ...user, ...dbProfile }
+          setUser(updated)
+          localStorage.setItem('subhone_auth_user', JSON.stringify(updated))
+        }
+      }
+    } catch (e) {
+      console.warn('App user profile sync note:', e)
+    }
+  }
 
   async function loadCatalog() {
     try {
