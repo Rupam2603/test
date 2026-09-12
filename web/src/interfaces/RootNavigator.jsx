@@ -72,9 +72,18 @@ export default function RootNavigator() {
     );
   }
 
-  // Pass logout handler to children if needed
-  if (currentUser.role === 'admin') return <AdminDashboard onLogout={handleLogout} />;
-  if (currentUser.role === 'retailer') return <RetailerPortal onLogout={handleLogout} />;
+  // Route based on role, passing isApp to each panel
+  if (currentUser.role === 'admin') {
+    return <AdminDashboard onLogout={handleLogout} isApp={isApp} user={currentUser} />;
+  }
+
+  if (currentUser.role === 'staff' || currentUser.role === 'delivery_partner') {
+    return <AdminDashboard onLogout={handleLogout} isApp={isApp} staffMode={true} user={currentUser} />;
+  }
+
+  if (currentUser.role === 'retailer') {
+    return <RetailerPortal onLogout={handleLogout} isApp={isApp} user={currentUser} />;
+  }
   
   // Default to customer
   return isApp ? <AppInterface onLogout={handleLogout} /> : <WebInterface onLogout={handleLogout} />;
