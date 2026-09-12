@@ -738,6 +738,64 @@ export async function fetchDbUserProfile(userIdOrEmailOrPhone) {
       }
     } catch (e) {}
 
+    // Fallback: check users table in Neon (which contains all admin, delivery_partner, customer, retailer)
+    try {
+      const userRows = await sql.query(
+        `SELECT * FROM users WHERE LOWER(id::text) = $1 OR LOWER(email) = $1 LIMIT 1`,
+        [queryKey]
+      )
+      if (userRows && userRows.length > 0) {
+        const ur = userRows[0]
+        const fullName = ur.name || ur.full_name || ur.email?.split('@')[0] || 'User'
+        const parts = fullName.split(' ')
+        return {
+          id: String(ur.id),
+          email: ur.email || '',
+          phone: ur.phone || '',
+          firstName: parts[0] || '',
+          lastName: parts.slice(1).join(' ') || '',
+          name: fullName,
+          avatar: ur.avatar_url || '',
+          address: ur.address || '',
+          dob: ur.dob || '',
+          age: ur.age || '',
+          gender: ur.gender || '',
+          shopName: ur.business_name || ur.shop_name || '',
+          role: ur.role || 'customer',
+          signupMethod: ur.email ? 'email' : 'phone'
+        }
+      }
+    } catch (e) {}
+
+    // Fallback: check auth_users table (legacy authentication accounts)
+    try {
+      const authRows = await sql.query(
+        `SELECT * FROM auth_users WHERE LOWER(id) = $1 OR LOWER(email) = $1 OR phone = $1 LIMIT 1`,
+        [queryKey]
+      )
+      if (authRows && authRows.length > 0) {
+        const ar = authRows[0]
+        const fullName = ar.full_name || ar.name || ar.email?.split('@')[0] || 'User'
+        const parts = fullName.split(' ')
+        return {
+          id: ar.id,
+          email: ar.email || '',
+          phone: ar.phone || '',
+          firstName: parts[0] || '',
+          lastName: parts.slice(1).join(' ') || '',
+          name: fullName,
+          avatar: ar.avatar_url || '',
+          address: ar.address || '',
+          dob: '',
+          age: '',
+          gender: '',
+          shopName: ar.shop_name || '',
+          role: ar.role || 'customer',
+          signupMethod: ar.email ? 'email' : 'phone'
+        }
+      }
+    } catch (e) {}
+
     return null
   } catch (err) {
     console.warn('fetchDbUserProfile note:', err.message)

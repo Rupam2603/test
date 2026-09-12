@@ -22,7 +22,7 @@ export function AuthPage({
   )
 
   const [mode, setMode] = useState(initialMode) // 'login' | 'signup'
-  const portal = 'retailer'
+  const [signupRole, setSignupRole] = useState('customer') // 'customer' | 'retailer'
 
   // Form fields
   const [email, setEmail] = useState('')
@@ -46,7 +46,7 @@ export function AuthPage({
   const [statusResult, setStatusResult] = useState(null)
   const [statusLoading, setStatusLoading] = useState(false)
 
-  // Handle Login
+  // Handle Login - Supports Customer, Retailer, Admin, Staff from same section
   const handleLogin = async (e) => {
     e.preventDefault()
     setErrorMsg(null)
@@ -60,14 +60,15 @@ export function AuthPage({
     setLoading(true)
     try {
       const sql = getDbClient()
+      const cleanEmail = email.toLowerCase().trim()
       let verifiedUser = null
 
       if (sql) {
         try {
-          // Check auth_users / profiles table in Neon
+          // Check profiles, users, or auth_users table in Neon
           const users = await sql.query(
-            'SELECT * FROM profiles WHERE email = $1 LIMIT 1',
-            [email.toLowerCase().trim()]
+            'SELECT * FROM profiles WHERE LOWER(email) = $1 LIMIT 1',
+            [cleanEmail]
           )
           if (users && users.length > 0) {
             verifiedUser = users[0]
@@ -81,34 +82,56 @@ export function AuthPage({
       if (sql) {
         try {
           const { fetchDbUserProfile } = await import('../../services/db')
-          dbProfile = await fetchDbUserProfile(email.toLowerCase().trim())
+          dbProfile = await fetchDbUserProfile(cleanEmail)
         } catch (dbErr) {
           console.warn('user_profiles login query note:', dbErr.message)
         }
       }
+
+      // Universal Role Detection: Customer, Retailer, Admin, Staff
+      let detectedRole = dbProfile?.role || verifiedUser?.role || null
+      if (!detectedRole) {
+        if (cleanEmail === 'subhonehealthgroup@gmail.com' || cleanEmail.includes('admin')) {
+          detectedRole = 'admin'
+        } else if (cleanEmail.includes('staff') || cleanEmail.includes('delivery')) {
+          detectedRole = 'delivery_partner'
+        } else if (cleanEmail.includes('retailer') || cleanEmail.includes('pharmacy') || cleanEmail.includes('partner') || dbProfile?.shopName || verifiedUser?.shop_name) {
+          detectedRole = 'retailer'
+        } else {
+          detectedRole = 'customer'
+        }
+      }
+
+      // Friendly Role Label
+      const roleDisplayName = 
+        detectedRole === 'admin' ? 'Administrator' :
+        detectedRole === 'retailer' ? 'Retailer Partner' :
+        (detectedRole === 'delivery_partner' || detectedRole === 'staff') ? 'Staff / Delivery Partner' :
+        'Customer'
 
       const userPayload = {
         id: dbProfile?.id || verifiedUser?.id || 'usr_' + Date.now(),
         name: dbProfile?.name || verifiedUser?.full_name || email.split('@')[0],
         firstName: dbProfile?.firstName || '',
         lastName: dbProfile?.lastName || '',
-        email: email.toLowerCase().trim(),
+        email: cleanEmail,
         phone: dbProfile?.phone || '',
         avatar: dbProfile?.avatar || '',
         address: dbProfile?.address || '',
         dob: dbProfile?.dob || '',
         age: dbProfile?.age || '',
         gender: dbProfile?.gender || '',
-        role: dbProfile?.role || 'retailer',
-        portal: 'retailer',
-        shopName: dbProfile?.shopName || verifiedUser?.shop_name || 'SubhOne Partner Store',
+        role: detectedRole,
+        portal: detectedRole,
+        shopName: dbProfile?.shopName || verifiedUser?.shop_name || (detectedRole === 'retailer' ? 'SubhOne Partner Store' : ''),
         signupMethod: dbProfile?.signupMethod || 'email',
         isVerified: true,
         loginAt: new Date().toISOString()
       }
 
       localStorage.setItem('subhone_auth_user', JSON.stringify(userPayload))
-      setSuccessMsg(`Welcome back, ${userPayload.name}!`)
+      localStorage.setItem('app_role', detectedRole)
+      setSuccessMsg(`Welcome back, ${userPayload.name}! Logged in as ${roleDisplayName}.`)
 
       setTimeout(() => {
         if (onSuccess) onSuccess(userPayload)
@@ -122,7 +145,7 @@ export function AuthPage({
     }
   }
 
-  // Handle Signup
+  // Handle Signup - Supports Customer & Retailer with unified creation
   const handleSignup = async (e) => {
     e.preventDefault()
     setErrorMsg(null)
@@ -136,7 +159,7 @@ export function AuthPage({
       setErrorMsg('Please enter your email address.')
       return
     }
-    if (!shopName.trim()) {
+    if (signupRole === 'retailer' && !shopName.trim()) {
       setErrorMsg('Please enter your Shop / Pharmacy name.')
       return
     }
@@ -152,7 +175,10 @@ export function AuthPage({
     setLoading(true)
     try {
       const sql = getDbClient()
-      if (sql) {
+      const cleanEmail = email.toLowerCase().trim()
+      const isRetailerSignup = signupRole === 'retailer'
+
+      if (sql && isRetailerSignup) {
         try {
           // Record retailer approval request in Neon DB
           await sql.query(`
@@ -164,7 +190,7 @@ export function AuthPage({
             'ret_' + Date.now(),
             fullName.trim(),
             shopName.trim(),
-            email.toLowerCase().trim(),
+            cleanEmail,
             phone.trim() || null,
             'PENDING'
           ])
@@ -174,7 +200,7 @@ export function AuthPage({
       }
 
       // Save directly to user_profiles table as well
-      const signupMethod = email.trim() ? 'email' : 'phone'
+      const signupMethod = cleanEmail ? 'email' : 'phone'
       const nameParts = fullName.trim().split(' ')
       const fName = nameParts[0] || ''
       const lName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
@@ -209,16 +235,17 @@ export function AuthPage({
               full_name = EXCLUDED.full_name,
               phone = COALESCE(EXCLUDED.phone, user_profiles.phone),
               shop_name = COALESCE(EXCLUDED.shop_name, user_profiles.shop_name),
+              role = EXCLUDED.role,
               updated_at = NOW();
           `, [
             'usr_' + Date.now(),
-            email.trim().toLowerCase(),
+            cleanEmail,
             fName,
             lName,
             fullName.trim(),
             phone.trim() || null,
-            shopName.trim() || null,
-            'retailer',
+            isRetailerSignup ? (shopName.trim() || null) : null,
+            signupRole,
             signupMethod
           ])
         } catch (profErr) {
@@ -231,19 +258,24 @@ export function AuthPage({
         name: fullName.trim(),
         firstName: fName,
         lastName: lName,
-        email: email.trim(),
+        email: cleanEmail,
         phone: phone.trim(),
-        shopName: shopName.trim(),
-        role: 'retailer',
-        portal: 'retailer',
+        shopName: isRetailerSignup ? shopName.trim() : '',
+        role: signupRole,
+        portal: signupRole,
         signupMethod: signupMethod,
-        isVerified: false,
-        status: 'PENDING_APPROVAL',
+        isVerified: !isRetailerSignup,
+        status: isRetailerSignup ? 'PENDING_APPROVAL' : 'ACTIVE',
         registeredAt: new Date().toISOString()
       }
 
       localStorage.setItem('subhone_auth_user', JSON.stringify(userPayload))
-      setSuccessMsg('Account created successfully! Approval request recorded.')
+      localStorage.setItem('app_role', signupRole)
+      setSuccessMsg(
+        isRetailerSignup
+          ? 'Retailer account created! Wholesale approval request recorded.'
+          : 'Account created successfully! Welcome to SubhOne Health.'
+      )
 
       setTimeout(() => {
         if (onSuccess) onSuccess(userPayload)
@@ -399,7 +431,7 @@ export function AuthPage({
               </button>
             )}
             {isApp && (
-              <span className="auth-app-tag">📱 App Retailer Portal</span>
+              <span className="auth-app-tag">📱 Unified App Login</span>
             )}
           </div>
 
@@ -417,14 +449,22 @@ export function AuthPage({
             <span className="auth-card-brand-subtitle">PHARMACY & DIAGNOSTIC</span>
 
             <h2 className="auth-card-heading">
-              {mode === 'login' ? 'Login to Your Account' : 'Create an Account'}
+              {mode === 'login' ? 'Unified Account Login' : 'Create an Account'}
             </h2>
             <p className="auth-card-subheading">
               {mode === 'login' 
-                ? 'Welcome back! Please enter your details.' 
-                : 'Please enter your details to set up your account.'
+                ? 'Single sign-in for Customers, Retailers, Staff & Administrators.' 
+                : 'Register your account to access genuine medicines & services.'
               }
             </p>
+
+            {/* Supported Roles Pill Bar */}
+            <div className="auth-supported-roles-bar">
+              <span className="auth-role-chip" title="Personal healthcare & medicine ordering">👤 Customer</span>
+              <span className="auth-role-chip" title="Pharmacy & wholesale partner">🏪 Retailer</span>
+              <span className="auth-role-chip" title="Administrative operations & master controls">🛡️ Admin</span>
+              <span className="auth-role-chip" title="Fulfillment & dispatch staff">🚚 Staff</span>
+            </div>
           </div>
 
           {/* Mode Switcher: Sign In vs Create Account */}
@@ -556,6 +596,29 @@ export function AuthPage({
           ) : (
             /* ================= SIGNUP FORM ================= */
             <form className="auth-form" onSubmit={handleSignup}>
+              {/* Account Type / Role Selection */}
+              <div className="auth-input-group">
+                <label className="auth-input-label">
+                  Register Account As <span className="required">*</span>
+                </label>
+                <div className="auth-role-select-toggle">
+                  <button
+                    type="button"
+                    className={`auth-role-select-btn ${signupRole === 'customer' ? 'active' : ''}`}
+                    onClick={() => setSignupRole('customer')}
+                  >
+                    👤 Customer (Personal)
+                  </button>
+                  <button
+                    type="button"
+                    className={`auth-role-select-btn ${signupRole === 'retailer' ? 'active' : ''}`}
+                    onClick={() => setSignupRole('retailer')}
+                  >
+                    🏪 Retailer / Pharmacy
+                  </button>
+                </div>
+              </div>
+
               <div className="auth-input-group">
                 <label className="auth-input-label">
                   Full Name <span className="required">*</span>
@@ -620,30 +683,32 @@ export function AuthPage({
                 </div>
               </div>
 
-              <div className="auth-input-group">
-                <label className="auth-input-label">
-                  Shop / Pharmacy Name <span className="required">*</span>
-                </label>
-                <div className="auth-input-box">
-                  <span className="auth-input-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
-                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                      <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
-                      <path d="M2 7h20"/>
-                      <path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
-                    </svg>
-                  </span>
-                  <input
-                    type="text"
-                    className="auth-input-field"
-                    placeholder="e.g. Apollo Chemist, LifeCare Pharmacy"
-                    value={shopName}
-                    onChange={e => setShopName(e.target.value)}
-                    required
-                  />
+              {signupRole === 'retailer' && (
+                <div className="auth-input-group">
+                  <label className="auth-input-label">
+                    Shop / Pharmacy Name <span className="required">*</span>
+                  </label>
+                  <div className="auth-input-box">
+                    <span className="auth-input-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                        <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
+                        <path d="M2 7h20"/>
+                        <path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      className="auth-input-field"
+                      placeholder="e.g. Apollo Chemist, LifeCare Pharmacy"
+                      value={shopName}
+                      onChange={e => setShopName(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="auth-two-col-row">
                 <div className="auth-input-group">

@@ -118,6 +118,14 @@ export function AppHeader({ onTabChange, onSearch, cartCount = 0, user, onLogout
               <button onClick={() => { onTabChange('category'); setMenuOpen(false); }}>⊞ Categories</button>
               <button onClick={() => { onTabChange('order'); setMenuOpen(false); }}>📦 My Orders</button>
               <button onClick={() => { onTabChange('cart'); setMenuOpen(false); }}>🛒 Wholesale Cart ({cartCount})</button>
+              {user && (user.role === 'admin' || user.role === 'staff' || user.role === 'delivery_partner') && (
+                <button 
+                  onClick={() => { onTabChange('admin'); setMenuOpen(false); }} 
+                  style={{ color: '#0284c7', fontWeight: '700' }}
+                >
+                  🛡️ {user.role === 'admin' ? 'Admin Dashboard' : 'Staff Orders Panel'}
+                </button>
+              )}
               {user ? (
                 <button onClick={() => { if (onLogout) onLogout(); setMenuOpen(false); }} style={{ color: '#ef4444' }}>
                   🚪 Logout ({user.name})
@@ -125,10 +133,10 @@ export function AppHeader({ onTabChange, onSearch, cartCount = 0, user, onLogout
               ) : (
                 <>
                   <button onClick={() => { onTabChange('login'); setMenuOpen(false); }} style={{ color: '#2563eb', fontWeight: '700' }}>
-                    🔑 Sign In to App
+                    🔑 Sign In (All Roles)
                   </button>
                   <button onClick={() => { onTabChange('signup'); setMenuOpen(false); }} style={{ color: '#059669', fontWeight: '700' }}>
-                    📝 Register as Retailer
+                    📝 Create New Account
                   </button>
                 </>
               )}

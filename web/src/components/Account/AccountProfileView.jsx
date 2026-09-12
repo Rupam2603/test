@@ -234,7 +234,14 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
               </div>
             )}
             <span className="account-status-badge">
-              {isRetailer ? '🛡️ Verified Retailer Partner' : '⭐ SubhOne Health Member'}
+              {user?.role === 'admin' 
+                ? '🛡️ System Administrator' 
+                : (user?.role === 'staff' || user?.role === 'delivery_partner')
+                ? '🚚 Operations & Delivery Staff'
+                : isRetailer 
+                ? '🏪 Verified Retailer Partner' 
+                : '⭐ SubhOne Health Member (Customer)'
+              }
             </span>
           </div>
 

@@ -12,6 +12,7 @@ import AuthPage from '../components/Auth/AuthPage'
 import AccountProfileView from '../components/Account/AccountProfileView'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
 import DeliveryLocationModal from '../components/Location/DeliveryLocationModal'
+import AdminDashboard from './AdminDashboard'
 import '../styles/app.css'
 
 export function AppInterface() {
@@ -246,7 +247,7 @@ export function AppInterface() {
     return matchSearch && matchCategory
   })
 
-  // Full-screen Auth Page for Mobile App (No Admin/Staff portal permitted in App)
+  // Full-screen Auth Page for Mobile App
   if (activeTab === 'login' || activeTab === 'signup') {
     return (
       <AuthPage
@@ -254,10 +255,25 @@ export function AppInterface() {
         isApp={true}
         onSuccess={(u) => {
           setUser(u)
-          setActiveTab('home')
+          if (u.role === 'admin') {
+            setActiveTab('admin')
+          } else {
+            setActiveTab('home')
+          }
           showToast(`Welcome back, ${u.name}!`)
         }}
         onClose={() => setActiveTab('home')}
+      />
+    )
+  }
+
+  if (activeTab === 'admin') {
+    return (
+      <AdminDashboard 
+        onLogout={() => {
+          handleLogout()
+          setActiveTab('home')
+        }} 
       />
     )
   }

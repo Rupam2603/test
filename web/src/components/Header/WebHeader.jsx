@@ -130,7 +130,7 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
                 Sign In
               </button>
               <button className="signup-btn" onClick={() => onTabChange && onTabChange('signup')}>
-                Register Retailer
+                Create Account
               </button>
             </div>
           )}
