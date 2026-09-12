@@ -3030,6 +3030,13 @@ html, body {
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
 }
 
+.header-location-route-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
 .header-location-pill {
   display: inline-flex;
   align-items: center;

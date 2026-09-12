@@ -94,10 +94,11 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
             title={location?.address ? `Deliver to: ${location.address}` : "Click to select delivery location"}
             aria-label="Delivery Location"
           >
-            <div className="location-pin-wrap">
-              <span className="location-pin-icon">📍</span>
-              <span className="location-pulse-ring"></span>
-            </div>
+            <img 
+              src="./location_delivery_icon.png" 
+              alt="Delivery Location" 
+              className="header-location-route-img"
+            />
           </button>
 
           {user ? (
