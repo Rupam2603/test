@@ -146,7 +146,8 @@ function formatProductRow(row) {
     pack: row.details || row.subtitle || null,
     tag: row.category_name || null,
     isFlashSale: Boolean(row.is_flash_sale),
-    isFeatured: Boolean(row.is_featured)
+    isFeatured: Boolean(row.is_featured),
+    isListed: Boolean(row.is_listed)
   }
 }
 

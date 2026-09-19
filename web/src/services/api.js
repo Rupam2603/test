@@ -165,8 +165,8 @@ export const api = {
     try {
       const dbProducts = await fetchDbProducts(filterOptions)
       if (dbProducts && dbProducts.length > 0) {
-        // Merge mock data missing fields to ensure rich UI (e.g. discount, mrp, pack)
-        return dbProducts.map(dbP => {
+        // Enriched DB products (merging mock data missing fields to ensure rich UI)
+        const enrichedDbProducts = dbProducts.map(dbP => {
           const mockMatch = MOCK_PRODUCTS.find(m => String(m.id) === String(dbP.id) || String(m.numericId) === String(dbP.numericId) || m.name === dbP.name)
           if (mockMatch) {
             return {
@@ -181,6 +181,13 @@ export const api = {
           }
           return dbP
         })
+        
+        // Add any mock products that aren't in the database to keep the store populated
+        const dbIds = new Set(dbProducts.map(p => String(p.id)))
+        const dbNames = new Set(dbProducts.map(p => p.name))
+        const remainingMock = MOCK_PRODUCTS.filter(m => !dbIds.has(String(m.id)) && !dbNames.has(m.name))
+        
+        return [...enrichedDbProducts, ...remainingMock]
       }
       return MOCK_PRODUCTS
     } catch (error) {
