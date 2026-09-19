@@ -20,7 +20,7 @@ export function ProductCard({ product, onAddToCart, onSelectProduct }) {
       
       <div className="product-info">
         <h3 className="product-name">{product.name}</h3>
-        <p className="product-description">{product.description}</p>
+        <p className="product-description">{product.details || product.description}</p>
         
         <div className="product-footer">
           <div className="price-container">

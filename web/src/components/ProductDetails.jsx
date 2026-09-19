@@ -49,7 +49,7 @@ export function ProductDetails({ product, onBack, onAddToCart }) {
 
           <div className="product-details-description">
             <h3>About this product</h3>
-            <p>{product.description || 'No description available for this product.'}</p>
+            <p>{product.details || product.description || 'No description available for this product.'}</p>
           </div>
 
           <button 

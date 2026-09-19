@@ -634,6 +634,12 @@ export default function AdminDashboard({ onLogout, isApp = false, staffMode = fa
     e.preventDefault()
     if (!editProduct.name.trim()) return showToast('Product name is required', 'error')
     const fields = {
+      name: editProduct.name,
+      subtitle: editProduct.subtitle,
+      category: editProduct.category,
+      brand: editProduct.brand,
+      image: editProduct.image,
+      details: editProduct.details,
       isListed: editProduct.isListed,
       isFlashSale: editProduct.isFlashSale,
       isFeatured: editProduct.isFeatured,

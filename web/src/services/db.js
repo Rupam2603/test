@@ -1523,6 +1523,13 @@ export async function updateDbProduct(productId, fields = {}) {
   if (typeof fields.retailerPrice === 'number') { setParts.push(`retailer_price = $${idx++}`); vals.push(fields.retailerPrice) }
   if (typeof fields.mrp === 'number')           { setParts.push(`mrp = $${idx++}`);           vals.push(fields.mrp) }
 
+  if (fields.name !== undefined)     { setParts.push(`name = $${idx++}`);          vals.push(fields.name) }
+  if (fields.subtitle !== undefined) { setParts.push(`subtitle = $${idx++}`);      vals.push(fields.subtitle) }
+  if (fields.category !== undefined) { setParts.push(`category_name = $${idx++}`); vals.push(fields.category) }
+  if (fields.brand !== undefined)    { setParts.push(`brand = $${idx++}`);         vals.push(fields.brand) }
+  if (fields.image !== undefined)    { setParts.push(`image_url = $${idx++}`);     vals.push(fields.image) }
+  if (fields.details !== undefined)  { setParts.push(`details = $${idx++}`);       vals.push(fields.details) }
+
   if (setParts.length === 0) return false
 
   setParts.push(`updated_at = NOW()`)
