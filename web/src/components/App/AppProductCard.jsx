@@ -1,6 +1,6 @@
 import React from 'react'
 
-export function AppProductCard({ product, onAddToCart }) {
+export function AppProductCard({ product, onAddToCart, onProductClick }) {
   const handleAdd = (e) => {
     e.stopPropagation()
     if (onAddToCart) {
@@ -10,18 +10,18 @@ export function AppProductCard({ product, onAddToCart }) {
     }
   }
 
+  const handleClick = () => {
+    if (onProductClick) onProductClick(product)
+  }
+
   return (
-    <div className="app-deal-product-card">
+    <div className="app-deal-product-card" onClick={handleClick}>
       {/* Badges Row */}
       <div className="app-deal-badge-row">
         {product.discount && (
           <span className="app-discount-pill-badge">{product.discount}</span>
         )}
-        {product.stockBadge && (
-          <span className={`app-stock-pill-badge ${product.isLowStock ? 'low-stock' : ''}`}>
-            {product.stockBadge}
-          </span>
-        )}
+
       </div>
 
       {/* Product Image */}
@@ -54,12 +54,14 @@ export function AppProductCard({ product, onAddToCart }) {
         </div>
 
         <button 
-          className="app-deal-add-plus-btn"
+          className="app-deal-add-plus-btn icon-only"
           onClick={handleAdd}
           aria-label={`Add ${product.name} to cart`}
         >
-          <span className="app-deal-add-text">ADD</span>
-          <span className="app-deal-add-icon">+</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { usePlatform } from '../../hooks/usePlatform'
-import { getDbClient } from '../../services/db'
+import { getDbClient, saveDbUserProfile } from '../../services/db'
+import { api } from '../../services/api'
 import '../../styles/auth.css'
 
 export function AuthPage({ 
@@ -22,7 +23,6 @@ export function AuthPage({
   )
 
   const [mode, setMode] = useState(initialMode) // 'login' | 'signup'
-  const [signupRole, setSignupRole] = useState('customer') // 'customer' | 'retailer'
 
   // Form fields
   const [email, setEmail] = useState('')
@@ -46,35 +46,56 @@ export function AuthPage({
   const [statusResult, setStatusResult] = useState(null)
   const [statusLoading, setStatusLoading] = useState(false)
 
-  // Handle Login - Supports Customer, Retailer, Admin, Staff from same section
+  // Handle Login - Supports Customer, Retailer, Admin, Staff via Email OR Phone Number
   const handleLogin = async (e) => {
     e.preventDefault()
     setErrorMsg(null)
     setSuccessMsg(null)
 
     if (!email || !password) {
-      setErrorMsg('Please enter both your email address and password.')
+      setErrorMsg('Please enter your email or mobile number and password.')
       return
     }
 
     setLoading(true)
     try {
       const sql = getDbClient()
-      const cleanEmail = email.toLowerCase().trim()
+      const cleanIdentifier = email.trim()
+      const lowerIdentifier = cleanIdentifier.toLowerCase()
+      const digitsOnly = cleanIdentifier.replace(/\D/g, '')
+      const last10Digits = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : (digitsOnly.length > 0 ? digitsOnly : null)
+      const isEmailInput = lowerIdentifier.includes('@')
+
       let verifiedUser = null
 
       if (sql) {
         try {
-          // Check profiles, users, or auth_users table in Neon
-          const users = await sql.query(
-            'SELECT * FROM profiles WHERE LOWER(email) = $1 LIMIT 1',
-            [cleanEmail]
-          )
-          if (users && users.length > 0) {
-            verifiedUser = users[0]
+          // Check users table in Neon
+          let userRows = await sql.query(
+            `SELECT * FROM users 
+             WHERE LOWER(email) = $1 
+                OR ($2::text IS NOT NULL AND RIGHT(REGEXP_REPLACE(COALESCE(email, ''), '[^0-9]', '', 'g'), 10) = $2)
+             LIMIT 1`,
+            [lowerIdentifier, last10Digits]
+          ).catch(() => [])
+
+          // Fallback to profiles table
+          if (!userRows || userRows.length === 0) {
+            userRows = await sql.query(
+              `SELECT * FROM profiles 
+               WHERE LOWER(email) = $1 
+                  OR phone = $1
+                  OR ($2::text IS NOT NULL AND RIGHT(REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g'), 10) = $2)
+               LIMIT 1`,
+              [lowerIdentifier, last10Digits]
+            ).catch(() => [])
+          }
+
+          if (userRows && userRows.length > 0) {
+            verifiedUser = userRows[0]
           }
         } catch (dbErr) {
-          console.warn('Profile query fallback:', dbErr.message)
+          console.warn('Profile/User query fallback:', dbErr.message)
         }
       }
 
@@ -82,23 +103,78 @@ export function AuthPage({
       if (sql) {
         try {
           const { fetchDbUserProfile } = await import('../../services/db')
-          dbProfile = await fetchDbUserProfile(cleanEmail)
+          dbProfile = await fetchDbUserProfile(cleanIdentifier)
         } catch (dbErr) {
           console.warn('user_profiles login query note:', dbErr.message)
         }
       }
 
+      // STRICT CHECK: If user was deleted or never existed, and is not system super-admin, strictly reject login
+      const isSuperAdminEmail = lowerIdentifier === 'subhonehealthgroup@gmail.com'
+      if (!dbProfile && !verifiedUser && !isSuperAdminEmail) {
+        setErrorMsg('Account not found or has been deleted by an administrator. Please check your credentials or create a new account.')
+        setLoading(false)
+        return
+      }
+
       // Universal Role Detection: Customer, Retailer, Admin, Staff
       let detectedRole = dbProfile?.role || verifiedUser?.role || null
       if (!detectedRole) {
-        if (cleanEmail === 'subhonehealthgroup@gmail.com' || cleanEmail.includes('admin')) {
+        if (isSuperAdminEmail || lowerIdentifier.includes('admin')) {
           detectedRole = 'admin'
-        } else if (cleanEmail.includes('staff') || cleanEmail.includes('delivery')) {
+        } else if (lowerIdentifier.includes('staff') || lowerIdentifier.includes('delivery')) {
           detectedRole = 'delivery_partner'
-        } else if (cleanEmail.includes('retailer') || cleanEmail.includes('pharmacy') || cleanEmail.includes('partner') || dbProfile?.shopName || verifiedUser?.shop_name) {
+        } else if (lowerIdentifier.includes('retailer') || lowerIdentifier.includes('pharmacy') || lowerIdentifier.includes('partner') || dbProfile?.shopName || verifiedUser?.shop_name) {
           detectedRole = 'retailer'
         } else {
           detectedRole = 'customer'
+        }
+      }
+
+      // If logging in as Retailer, verify admin approval status before allowing access
+      if (detectedRole === 'retailer') {
+        let isApproved = false
+        // 1. Check dbProfile approvalStatus
+        if (dbProfile?.approvalStatus === 'approved') {
+          isApproved = true
+        }
+
+        // 2. Check profiles / retailer_approvals table if sql is connected
+        if (!isApproved && sql) {
+          try {
+            const retRes = await sql.query(
+              `SELECT approval_status, status FROM retailer_approvals 
+               WHERE LOWER(email) = $1 
+                  OR phone = $1
+                  OR ($2::text IS NOT NULL AND RIGHT(REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g'), 10) = $2)
+               LIMIT 1`,
+              [lowerIdentifier, last10Digits]
+            ).catch(() => [])
+
+            const profRes = await sql.query(
+              `SELECT approval_status FROM profiles 
+               WHERE LOWER(email) = $1 
+                  OR phone = $1
+                  OR ($2::text IS NOT NULL AND RIGHT(REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g'), 10) = $2)
+               LIMIT 1`,
+              [lowerIdentifier, last10Digits]
+            ).catch(() => [])
+
+            const retStatus = String(retRes?.[0]?.approval_status || retRes?.[0]?.status || '').toLowerCase()
+            const profStatus = String(profRes?.[0]?.approval_status || '').toLowerCase()
+
+            if (retStatus === 'approved' || profStatus === 'approved') {
+              isApproved = true
+            }
+          } catch (apprErr) {
+            console.warn('Retailer approval verification note:', apprErr.message)
+          }
+        }
+
+        if (!isApproved) {
+          setErrorMsg('Your retailer account is currently pending admin approval. You cannot log in until verified by our administration. Please check your application status below or contact support.')
+          setLoading(false)
+          return
         }
       }
 
@@ -109,22 +185,26 @@ export function AuthPage({
         (detectedRole === 'delivery_partner' || detectedRole === 'staff') ? 'Staff / Delivery Partner' :
         'Customer'
 
+      const finalEmail = dbProfile?.email || verifiedUser?.email || (isEmailInput ? lowerIdentifier : '')
+      const finalPhone = dbProfile?.phone || verifiedUser?.phone || (!isEmailInput ? cleanIdentifier : '')
+      const resolvedName = dbProfile?.name || verifiedUser?.full_name || verifiedUser?.name || (isEmailInput ? finalEmail.split('@')[0] : `User ${finalPhone.slice(-4) || ''}`)
+
       const userPayload = {
         id: dbProfile?.id || verifiedUser?.id || 'usr_' + Date.now(),
-        name: dbProfile?.name || verifiedUser?.full_name || email.split('@')[0],
-        firstName: dbProfile?.firstName || '',
+        name: resolvedName,
+        firstName: dbProfile?.firstName || (resolvedName ? resolvedName.split(' ')[0] : ''),
         lastName: dbProfile?.lastName || '',
-        email: cleanEmail,
-        phone: dbProfile?.phone || '',
-        avatar: dbProfile?.avatar || '',
+        email: finalEmail,
+        phone: finalPhone,
+        avatar: dbProfile?.avatar || verifiedUser?.avatar_url || '',
         address: dbProfile?.address || '',
         dob: dbProfile?.dob || '',
         age: dbProfile?.age || '',
         gender: dbProfile?.gender || '',
         role: detectedRole,
         portal: detectedRole,
-        shopName: dbProfile?.shopName || verifiedUser?.shop_name || (detectedRole === 'retailer' ? 'SubhOne Partner Store' : ''),
-        signupMethod: dbProfile?.signupMethod || 'email',
+        shopName: dbProfile?.shopName || verifiedUser?.shop_name || verifiedUser?.business_name || (detectedRole === 'retailer' ? 'SubhOne Partner Store' : ''),
+        signupMethod: dbProfile?.signupMethod || (finalEmail ? 'email' : 'phone'),
         isVerified: true,
         loginAt: new Date().toISOString()
       }
@@ -134,8 +214,11 @@ export function AuthPage({
       setSuccessMsg(`Welcome back, ${userPayload.name}! Logged in as ${roleDisplayName}.`)
 
       setTimeout(() => {
-        if (onSuccess) onSuccess(userPayload)
-        if (onClose) onClose()
+        if (onSuccess) {
+          onSuccess(userPayload)
+        } else if (onClose) {
+          onClose()
+        }
       }, 700)
 
     } catch (err) {
@@ -159,10 +242,6 @@ export function AuthPage({
       setErrorMsg('Please enter your email address.')
       return
     }
-    if (signupRole === 'retailer' && !shopName.trim()) {
-      setErrorMsg('Please enter your Shop / Pharmacy name.')
-      return
-    }
     if (password.length < 6) {
       setErrorMsg('Password must be at least 6 characters.')
       return
@@ -176,110 +255,58 @@ export function AuthPage({
     try {
       const sql = getDbClient()
       const cleanEmail = email.toLowerCase().trim()
-      const isRetailerSignup = signupRole === 'retailer'
+      const assignedUserId = 'usr_' + Date.now()
+      const signupRole = 'customer'
 
-      if (sql && isRetailerSignup) {
-        try {
-          // Record retailer approval request in Neon DB
-          await sql.query(`
-            INSERT INTO retailer_approvals (
-              id, retailer_name, shop_name, email, phone, status, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
-            ON CONFLICT DO NOTHING
-          `, [
-            'ret_' + Date.now(),
-            fullName.trim(),
-            shopName.trim(),
-            cleanEmail,
-            phone.trim() || null,
-            'PENDING'
-          ])
-        } catch (dbErr) {
-          console.warn('Direct retailer insertion note:', dbErr.message)
-        }
-      }
-
-      // Save directly to user_profiles table as well
+      // Save user profile reliably using centralized saveDbUserProfile
       const signupMethod = cleanEmail ? 'email' : 'phone'
       const nameParts = fullName.trim().split(' ')
       const fName = nameParts[0] || ''
       const lName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
 
-      if (sql) {
-        try {
-          await sql.query(`
-            CREATE TABLE IF NOT EXISTS user_profiles (
-              id VARCHAR(100) PRIMARY KEY,
-              email VARCHAR(255) UNIQUE,
-              first_name VARCHAR(100),
-              last_name VARCHAR(100),
-              full_name VARCHAR(200),
-              phone VARCHAR(50),
-              avatar_url TEXT,
-              address TEXT,
-              dob VARCHAR(30),
-              age INT,
-              gender VARCHAR(30),
-              shop_name VARCHAR(200),
-              role VARCHAR(50) DEFAULT 'customer',
-              signup_method VARCHAR(20) DEFAULT 'email',
-              updated_at TIMESTAMP DEFAULT NOW(),
-              created_at TIMESTAMP DEFAULT NOW()
-            );
-          `)
-          await sql.query(`
-            INSERT INTO user_profiles (
-              id, email, first_name, last_name, full_name, phone, shop_name, role, signup_method, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-            ON CONFLICT (email) DO UPDATE SET
-              full_name = EXCLUDED.full_name,
-              phone = COALESCE(EXCLUDED.phone, user_profiles.phone),
-              shop_name = COALESCE(EXCLUDED.shop_name, user_profiles.shop_name),
-              role = EXCLUDED.role,
-              updated_at = NOW();
-          `, [
-            'usr_' + Date.now(),
-            cleanEmail,
-            fName,
-            lName,
-            fullName.trim(),
-            phone.trim() || null,
-            isRetailerSignup ? (shopName.trim() || null) : null,
-            signupRole,
-            signupMethod
-          ])
-        } catch (profErr) {
-          console.warn('user_profiles sync note:', profErr.message)
-        }
+      try {
+        await saveDbUserProfile({
+          id: assignedUserId,
+          email: cleanEmail,
+          phone: phone.trim() || '',
+          firstName: fName,
+          lastName: lName,
+          name: fullName.trim(),
+          role: signupRole,
+          shopName: '',
+          signupMethod: signupMethod
+        })
+      } catch (profErr) {
+        console.warn('saveDbUserProfile signup sync note:', profErr.message)
       }
 
+      // Regular customers can directly log in
       const userPayload = {
-        id: 'usr_' + Date.now(),
+        id: assignedUserId,
         name: fullName.trim(),
         firstName: fName,
         lastName: lName,
         email: cleanEmail,
         phone: phone.trim(),
-        shopName: isRetailerSignup ? shopName.trim() : '',
+        shopName: '',
         role: signupRole,
         portal: signupRole,
         signupMethod: signupMethod,
-        isVerified: !isRetailerSignup,
-        status: isRetailerSignup ? 'PENDING_APPROVAL' : 'ACTIVE',
+        isVerified: true,
+        status: 'ACTIVE',
         registeredAt: new Date().toISOString()
       }
 
       localStorage.setItem('subhone_auth_user', JSON.stringify(userPayload))
       localStorage.setItem('app_role', signupRole)
-      setSuccessMsg(
-        isRetailerSignup
-          ? 'Retailer account created! Wholesale approval request recorded.'
-          : 'Account created successfully! Welcome to SubhOne Health.'
-      )
+      setSuccessMsg('Account created successfully! Welcome to SubhOne Health.')
 
       setTimeout(() => {
-        if (onSuccess) onSuccess(userPayload)
-        if (onClose) onClose()
+        if (onSuccess) {
+          onSuccess(userPayload)
+        } else if (onClose) {
+          onClose()
+        }
       }, 900)
 
     } catch (err) {
@@ -308,6 +335,14 @@ export function AuthPage({
           )
           if (res && res.length > 0) {
             statusData = res[0]
+          } else {
+            const profRes = await sql.query(
+              'SELECT * FROM profiles WHERE (email ILIKE $1 OR phone ILIKE $1) AND role = \'retailer\' LIMIT 1',
+              [`%${statusQuery.trim()}%`]
+            )
+            if (profRes && profRes.length > 0) {
+              statusData = profRes[0]
+            }
           }
         } catch (e) {
           console.warn('Status lookup note:', e.message)
@@ -315,19 +350,17 @@ export function AuthPage({
       }
 
       if (statusData) {
+        const rawStatus = (statusData.approval_status || statusData.status || 'PENDING').toUpperCase()
         setStatusResult({
           found: true,
-          shopName: statusData.shop_name || statusData.retailer_name,
-          status: statusData.status || 'APPROVED',
+          shopName: statusData.shop_name || statusData.full_name || statusData.retailer_name || 'Retailer Pharmacy',
+          status: rawStatus,
           date: statusData.created_at ? new Date(statusData.created_at).toLocaleDateString() : 'Recent'
         })
       } else {
-        // Friendly simulated check for query
         setStatusResult({
-          found: true,
-          shopName: 'Subhasis Wholesale Pharmacy Partner',
-          status: 'APPROVED',
-          date: 'Active'
+          found: false,
+          message: 'No retailer application found for this email or phone. If you just registered, please ensure your email/phone matches.'
         })
       }
     } catch (err) {
@@ -351,21 +384,15 @@ export function AuthPage({
           <div className="auth-hero-panel">
             <div className="auth-hero-brand">
               <div className="auth-brand-badge-img">
-                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="48" height="48" rx="14" fill="#ffffff"/>
-                  <path d="M14 24C14 18.4772 18.4772 14 24 14C29.5228 14 34 18.4772 34 24C34 29.5228 29.5228 34 24 34" stroke="#2563eb" strokeWidth="4" strokeLinecap="round"/>
-                  <path d="M24 18V30M18 24H30" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round"/>
-                  <circle cx="33" cy="33" r="5" fill="#2563eb"/>
-                </svg>
+                <img src="./subhone_logo.png" alt="SubhOne Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
               <div className="auth-hero-brand-text">
                 <h1>SubhOne <span className="brand-red-sub">Health Group</span></h1>
-                <span className="brand-tagline">PHARMACY & DIAGNOSTIC</span>
               </div>
             </div>
 
             <div className="auth-welcome-pill">
-              <span>{mode === 'login' ? '🛡️ Welcome Back' : '✨ Join SubhOne Health'}</span>
+              <span>{mode === 'login' ? ' Welcome Back' : ' Join SubhOne Health'}</span>
             </div>
 
             <h2 className="auth-hero-title">
@@ -382,21 +409,21 @@ export function AuthPage({
 
             <div className="auth-features-list">
               <div className="auth-feature-item">
-                <div className="auth-feature-icon-box">💊</div>
+                <div className="auth-feature-icon-box"></div>
                 <div className="auth-feature-text">
                   <strong>Wide Range</strong>
                   <span>of Health Products & Certified Brands</span>
                 </div>
               </div>
               <div className="auth-feature-item">
-                <div className="auth-feature-icon-box">🛡️</div>
+                <div className="auth-feature-icon-box"></div>
                 <div className="auth-feature-text">
                   <strong>Trusted</strong>
                   <span>Quality, Lab Certified & 100% Genuine Care</span>
                 </div>
               </div>
               <div className="auth-feature-item">
-                <div className="auth-feature-icon-box">🚚</div>
+                <div className="auth-feature-icon-box"></div>
                 <div className="auth-feature-text">
                   <strong>Fast & Reliable</strong>
                   <span>Doorstep Express Delivery Across Pin Codes</span>
@@ -406,7 +433,7 @@ export function AuthPage({
 
             <div className="auth-fleet-card">
               <div className="auth-fleet-left">
-                <span className="auth-fleet-icon">🚐</span>
+                <span className="auth-fleet-icon"></span>
                 <div className="auth-fleet-info">
                   <strong>SubhOne Express Fleet</strong>
                   <span>Safe cold-chain & tamper-proof medicine boxes</span>
@@ -430,41 +457,17 @@ export function AuthPage({
                 ← Back to Store
               </button>
             )}
-            {isApp && (
-              <span className="auth-app-tag">📱 Unified App Login</span>
-            )}
+
           </div>
 
           {/* Centered Brand Header */}
           <div className="auth-card-brand">
             <div className="auth-card-logo-box">
-              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="48" height="48" rx="14" fill="#ffffff"/>
-                <path d="M14 24C14 18.4772 18.4772 14 24 14C29.5228 14 34 18.4772 34 24C34 29.5228 29.5228 34 24 34" stroke="#2563eb" strokeWidth="4" strokeLinecap="round"/>
-                <path d="M24 18V30M18 24H30" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round"/>
-                <circle cx="33" cy="33" r="5" fill="#2563eb"/>
-              </svg>
+              <img src="./subhone_logo.png" alt="SubhOne Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <h3 className="auth-card-brand-title">SubhOne <span style={{ color: '#ef4444' }}>Health Group</span></h3>
-            <span className="auth-card-brand-subtitle">PHARMACY & DIAGNOSTIC</span>
 
-            <h2 className="auth-card-heading">
-              {mode === 'login' ? 'Unified Account Login' : 'Create an Account'}
-            </h2>
-            <p className="auth-card-subheading">
-              {mode === 'login' 
-                ? 'Single sign-in for Customers, Retailers, Staff & Administrators.' 
-                : 'Register your account to access genuine medicines & services.'
-              }
-            </p>
 
-            {/* Supported Roles Pill Bar */}
-            <div className="auth-supported-roles-bar">
-              <span className="auth-role-chip" title="Personal healthcare & medicine ordering">👤 Customer</span>
-              <span className="auth-role-chip" title="Pharmacy & wholesale partner">🏪 Retailer</span>
-              <span className="auth-role-chip" title="Administrative operations & master controls">🛡️ Admin</span>
-              <span className="auth-role-chip" title="Fulfillment & dispatch staff">🚚 Staff</span>
-            </div>
           </div>
 
           {/* Mode Switcher: Sign In vs Create Account */}
@@ -488,13 +491,13 @@ export function AuthPage({
           {/* Feedback Messages */}
           {errorMsg && (
             <div className="auth-alert-error" role="alert">
-              <span>⚠️</span>
+              <span></span>
               <span>{errorMsg}</span>
             </div>
           )}
           {successMsg && (
             <div className="auth-alert-success" role="status">
-              <span>✓</span>
+              <span></span>
               <span>{successMsg}</span>
             </div>
           )}
@@ -505,7 +508,7 @@ export function AuthPage({
             <form className="auth-form" onSubmit={handleLogin}>
               <div className="auth-input-group">
                 <label className="auth-input-label">
-                  Email Address <span className="required">*</span>
+                  Email Address or Mobile Number <span className="required">*</span>
                 </label>
                 <div className="auth-input-box">
                   <span className="auth-input-icon">
@@ -515,9 +518,11 @@ export function AuthPage({
                     </svg>
                   </span>
                   <input
-                    type="email"
+                    type="text"
+                    inputMode="email"
+                    autoComplete="username"
                     className="auth-input-field"
-                    placeholder="name@example.com"
+                    placeholder="name@example.com or 10-digit mobile"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required
@@ -594,31 +599,7 @@ export function AuthPage({
               </button>
             </form>
           ) : (
-            /* ================= SIGNUP FORM ================= */
             <form className="auth-form" onSubmit={handleSignup}>
-              {/* Account Type / Role Selection */}
-              <div className="auth-input-group">
-                <label className="auth-input-label">
-                  Register Account As <span className="required">*</span>
-                </label>
-                <div className="auth-role-select-toggle">
-                  <button
-                    type="button"
-                    className={`auth-role-select-btn ${signupRole === 'customer' ? 'active' : ''}`}
-                    onClick={() => setSignupRole('customer')}
-                  >
-                    👤 Customer (Personal)
-                  </button>
-                  <button
-                    type="button"
-                    className={`auth-role-select-btn ${signupRole === 'retailer' ? 'active' : ''}`}
-                    onClick={() => setSignupRole('retailer')}
-                  >
-                    🏪 Retailer / Pharmacy
-                  </button>
-                </div>
-              </div>
-
               <div className="auth-input-group">
                 <label className="auth-input-label">
                   Full Name <span className="required">*</span>
@@ -682,33 +663,6 @@ export function AuthPage({
                   />
                 </div>
               </div>
-
-              {signupRole === 'retailer' && (
-                <div className="auth-input-group">
-                  <label className="auth-input-label">
-                    Shop / Pharmacy Name <span className="required">*</span>
-                  </label>
-                  <div className="auth-input-box">
-                    <span className="auth-input-icon">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                        <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
-                        <path d="M2 7h20"/>
-                        <path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      className="auth-input-field"
-                      placeholder="e.g. Apollo Chemist, LifeCare Pharmacy"
-                      value={shopName}
-                      onChange={e => setShopName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
 
               <div className="auth-two-col-row">
                 <div className="auth-input-group">
@@ -798,7 +752,7 @@ export function AuthPage({
                 className="auth-modal-close-btn"
                 onClick={() => setShowStatusModal(false)}
               >
-                ✕
+                
               </button>
             </div>
             <p style={{ fontSize: '13px', color: '#64748b', marginTop: 0, marginBottom: '14px' }}>

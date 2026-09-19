@@ -88,7 +88,7 @@ export function WebMenuDrawer({ isOpen, onClose, activeTab, onTabChange }) {
         <div className="web-drawer-header">
           <div className="web-drawer-brand">
             <img 
-              src="/subhone_logo.png" 
+              src="./subhone_logo.png" 
               alt="SubhOne Logo" 
               className="web-drawer-logo-img"
               onError={(e) => { e.target.style.display = 'none' }}
@@ -160,7 +160,7 @@ export function WebMenuDrawer({ isOpen, onClose, activeTab, onTabChange }) {
         <div className="web-drawer-footer">
           <div className="web-drawer-contact-card">
             <p className="contact-label">Wholesale Support Helpline</p>
-            <p className="contact-value">📞 +91 9836307553</p>
+            <p className="contact-value"> +91 9836307553</p>
             <span className="license-tag">FSSAI: 22823086000064</span>
           </div>
         </div>

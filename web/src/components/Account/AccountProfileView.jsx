@@ -63,21 +63,21 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
       try {
         const dbProfile = await api.getUserProfile(queryKey)
         if (dbProfile && isMounted) {
-          if (dbProfile.firstName) setFirstName(dbProfile.firstName)
-          if (dbProfile.lastName) setLastName(dbProfile.lastName)
-          if (dbProfile.email) setEmail(dbProfile.email)
-          if (dbProfile.phone) setPhone(dbProfile.phone)
-          if (dbProfile.dob) {
-            setDob(dbProfile.dob)
+          if (dbProfile.firstName !== undefined) setFirstName(dbProfile.firstName || '')
+          if (dbProfile.lastName !== undefined) setLastName(dbProfile.lastName || '')
+          if (dbProfile.email !== undefined) setEmail(dbProfile.email || '')
+          if (dbProfile.phone !== undefined) setPhone(dbProfile.phone || '')
+          if (dbProfile.dob !== undefined) {
+            setDob(dbProfile.dob || '')
             const computedAge = calculateAgeFromDob(dbProfile.dob)
             setAge(computedAge !== '' ? computedAge : (dbProfile.age || ''))
-          } else if (dbProfile.age) {
-            setAge(dbProfile.age)
+          } else if (dbProfile.age !== undefined) {
+            setAge(dbProfile.age || '')
           }
-          if (dbProfile.gender) setGender(dbProfile.gender)
-          if (dbProfile.address) setAddress(dbProfile.address)
-          if (dbProfile.shopName) setShopName(dbProfile.shopName)
-          if (dbProfile.avatar) setAvatar(dbProfile.avatar)
+          if (dbProfile.gender !== undefined) setGender(dbProfile.gender || '')
+          if (dbProfile.address !== undefined) setAddress(dbProfile.address || '')
+          if (dbProfile.shopName !== undefined) setShopName(dbProfile.shopName || '')
+          if (dbProfile.avatar !== undefined) setAvatar(dbProfile.avatar || '')
 
           // Sync into localStorage and parent state
           const updatedUserObj = { ...user, ...dbProfile }
@@ -174,7 +174,7 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
             className="edit-profile-action-btn"
             onClick={() => setIsEditing(true)}
           >
-            ✏️ Edit Profile
+             Edit Profile
           </button>
         ) : (
           <div className="edit-btn-group">
@@ -192,7 +192,7 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
               onClick={handleSave}
               disabled={saving}
             >
-              {saving ? 'Saving...' : '💾 Save Changes'}
+              {saving ? 'Saving...' : ' Save Changes'}
             </button>
           </div>
         )}
@@ -214,7 +214,7 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
 
             {isEditing && (
               <label className="avatar-upload-badge" title="Change profile photo">
-                📷
+                
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -230,17 +230,17 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
             <p className="account-user-email">{email || phone || 'No email registered'}</p>
             {isRetailer && shopName && (
               <div className="account-store-badge">
-                🏪 {shopName}
+                 {shopName}
               </div>
             )}
             <span className="account-status-badge">
               {user?.role === 'admin' 
-                ? '🛡️ System Administrator' 
+                ? ' System Administrator' 
                 : (user?.role === 'staff' || user?.role === 'delivery_partner')
-                ? '🚚 Operations & Delivery Staff'
+                ? ' Operations & Delivery Staff'
                 : isRetailer 
-                ? '🏪 Verified Retailer Partner' 
-                : '⭐ SubhOne Health Member (Customer)'
+                ? ' Verified Retailer Partner' 
+                : ' SubhOne Health Member (Customer)'
               }
             </span>
           </div>
@@ -258,7 +258,7 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
 
           {onLogout && (
             <button type="button" className="account-logout-btn" onClick={onLogout}>
-              🚪 Sign Out of Account
+               Sign Out of Account
             </button>
           )}
         </div>
@@ -267,7 +267,7 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
         <div className="account-details-card">
           <div className="card-header-row">
             <h4>{isEditing ? 'Edit Personal Information' : 'Personal & Healthcare Details'}</h4>
-            {loadingProfile && <span className="sync-badge">🔄 Syncing with Database...</span>}
+            {loadingProfile && <span className="sync-badge"> Syncing with Database...</span>}
           </div>
 
           <form onSubmit={handleSave} className="account-form-grid">
@@ -308,9 +308,9 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
               <label className="field-label">
                 Email Address
                 {isEmailSignup ? (
-                  <span className="locked-badge" title="Registered identifier cannot be altered">🔒 Primary Login</span>
+                  <span className="locked-badge" title="Registered identifier cannot be altered"> Primary Login</span>
                 ) : (
-                  <span className="editable-badge">✏️ Editable</span>
+                  <span className="editable-badge"> Editable</span>
                 )}
               </label>
               {isEditing ? (
@@ -333,9 +333,9 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
               <label className="field-label">
                 Phone Number
                 {!isEmailSignup ? (
-                  <span className="locked-badge" title="Registered identifier cannot be altered">🔒 Primary Login</span>
+                  <span className="locked-badge" title="Registered identifier cannot be altered"> Primary Login</span>
                 ) : (
-                  <span className="editable-badge">✏️ Editable</span>
+                  <span className="editable-badge"> Editable</span>
                 )}
               </label>
               {isEditing ? (
@@ -374,7 +374,7 @@ export default function AccountProfileView({ user, onUpdateUser, onLogout, showT
             <div className="form-group-col">
               <label className="field-label">
                 Age
-                <span className="auto-calc-badge">⚡ Auto-calculated</span>
+                <span className="auto-calc-badge"> Auto-calculated</span>
               </label>
               <div className="field-display-value age-highlight">
                 {age ? `${age} years old` : (dob ? `${calculateAgeFromDob(dob)} years old` : '—')}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 export function AppWholesaleBanner({ onExplore, onCatalog }) {
   const [slideIndex, setSlideIndex] = useState(0)
@@ -6,7 +6,7 @@ export function AppWholesaleBanner({ onExplore, onCatalog }) {
   const slides = [
     {
       badge: 'B2B WHOLESALE PHARMACY',
-      tagline: '⚡ High Retailer Margins',
+      tagline: ' High Retailer Margins',
       titleHighlight: 'Licensed Retailers & Clinics',
       titlePrefix: 'Direct Supply for ',
       description: 'Special distributor prices for registered pharmacies. Bulk medicine orders, batch test documentation, GST invoices & priority scheduled dispatch.',
@@ -17,7 +17,7 @@ export function AppWholesaleBanner({ onExplore, onCatalog }) {
     },
     {
       badge: 'DIRECT DISTRIBUTOR DEALS',
-      tagline: '🏛️ Verified Wholesale Drug License',
+      tagline: ' Verified Wholesale Drug License',
       titleHighlight: 'Pharma Wholesaler',
       titlePrefix: 'West Bengal Medicine ',
       description: 'Serving pharmacies, retail medical stores, and healthcare institutions across Hooghly & Kolkata with authentic supply batches.',
@@ -30,13 +30,12 @@ export function AppWholesaleBanner({ onExplore, onCatalog }) {
 
   const current = slides[slideIndex]
 
-  const handlePrev = () => {
-    setSlideIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1))
-  }
-
-  const handleNext = () => {
-    setSlideIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
-  }
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSlideIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [slides.length])
 
   return (
     <div className="app-wholesale-hero-card">
@@ -65,13 +64,7 @@ export function AppWholesaleBanner({ onExplore, onCatalog }) {
         </button>
       </div>
 
-      {/* Carousel Arrow Controls */}
-      <button className="app-hero-carousel-arrow arrow-left" onClick={handlePrev} aria-label="Previous slide">
-        ‹
-      </button>
-      <button className="app-hero-carousel-arrow arrow-right" onClick={handleNext} aria-label="Next slide">
-        ›
-      </button>
+
 
       {/* Bottom Preview Card */}
       <div className="app-hero-preview-box">

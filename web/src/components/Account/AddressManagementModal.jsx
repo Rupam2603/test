@@ -88,12 +88,12 @@ export function AddressManagementModal({ isOpen, onClose, user, onAddressSelecte
           <div className="tracker-brand-badge">
             <span className="pulse-dot" style={{ background: '#38bdf8' }}></span>
             <div className="badge-text-group">
-              <span className="fast-tag" style={{ color: '#bae6fd' }}>📍 DOORSTEP LOGISTICS</span>
+              <span className="fast-tag" style={{ color: '#bae6fd' }}> DOORSTEP LOGISTICS</span>
               <h3 className="tracker-heading">Saved Delivery Addresses</h3>
             </div>
           </div>
           <button type="button" className="tracker-close-btn" onClick={onClose} aria-label="Close modal">
-            ✕
+            
           </button>
         </div>
 
@@ -126,7 +126,7 @@ export function AddressManagementModal({ isOpen, onClose, user, onAddressSelecte
                 <p style={{ textAlign: 'center', color: '#64748b' }}>Loading addresses from database...</p>
               ) : addresses.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 10px', background: '#f8fafc', borderRadius: '16px' }}>
-                  <span style={{ fontSize: '32px' }}>📍</span>
+                  <span style={{ fontSize: '32px' }}></span>
                   <h4 style={{ margin: '8px 0 4px', color: '#0f172a' }}>No Saved Addresses Found</h4>
                   <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#64748b' }}>Add your primary doorstep address for instant 10-minute dispatch.</p>
                   <button
@@ -213,7 +213,7 @@ export function AddressManagementModal({ isOpen, onClose, user, onAddressSelecte
                       cursor: 'pointer'
                     }}
                   >
-                    📍 Auto-Fill Current Location
+                     Auto-Fill Current Location
                   </button>
                   <button
                     type="button"
@@ -331,7 +331,7 @@ export function AddressManagementModal({ isOpen, onClose, user, onAddressSelecte
                   disabled={saving}
                   style={{ flex: 2, height: '44px', borderRadius: '9999px', border: 'none', background: '#16a34a', color: '#ffffff', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)' }}
                 >
-                  {saving ? 'Saving to Database...' : 'Save Address to Neon Postgres 💾'}
+                  {saving ? 'Saving to Database...' : 'Save Address to Neon Postgres '}
                 </button>
               </div>
             </form>

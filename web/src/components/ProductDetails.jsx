@@ -1,26 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 export function ProductDetails({ product, onBack, onAddToCart }) {
-  const [reviews, setReviews] = useState([])
-  const [rating, setRating] = useState(5)
-  const [reviewText, setReviewText] = useState('')
-
-  const handleSubmitReview = (e) => {
-    e.preventDefault()
-    if (!reviewText.trim()) return
-    
-    const newReview = {
-      id: Date.now(),
-      author: 'Guest User',
-      rating,
-      text: reviewText,
-      date: new Date().toLocaleDateString()
-    }
-    
-    setReviews([newReview, ...reviews])
-    setReviewText('')
-    setRating(5)
-  }
 
   if (!product) return null
 
@@ -48,7 +28,7 @@ export function ProductDetails({ product, onBack, onAddToCart }) {
           <p className="product-details-brand">Brand: <span>{product.brand}</span></p>
           
           <div className="product-details-meta">
-            <div className="rating-badge">⭐ {product.rating}</div>
+            <div className="rating-badge"> {product.rating}</div>
             <span className="reviews-count">({product.reviewsCount} reviews)</span>
           </div>
 
@@ -70,53 +50,6 @@ export function ProductDetails({ product, onBack, onAddToCart }) {
           <div className="product-details-description">
             <h3>About this product</h3>
             <p>{product.description || 'No description available for this product.'}</p>
-          </div>
-
-          <div className="product-reviews-section">
-            <h3 className="section-title">Customer Reviews</h3>
-            
-            <form className="review-form" onSubmit={handleSubmitReview}>
-              <h4 className="form-title">Write a Review</h4>
-              <div className="star-rating-select">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <span 
-                    key={star}
-                    className={`star ${rating >= star ? 'selected' : ''}`}
-                    onClick={() => setRating(star)}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-              <textarea 
-                className="review-textarea"
-                placeholder="Share your experience with this product..." 
-                value={reviewText}
-                onChange={e => setReviewText(e.target.value)}
-                rows="3"
-                required
-              />
-              <button type="submit" className="submit-review-btn">Submit Review</button>
-            </form>
-
-            <div className="reviews-list">
-              {reviews.length === 0 ? (
-                <p className="no-reviews">No reviews yet. Be the first to review!</p>
-              ) : (
-                reviews.map(rev => (
-                  <div key={rev.id} className="review-card">
-                    <div className="review-header">
-                      <span className="review-author">{rev.author}</span>
-                      <span className="review-date">{rev.date}</span>
-                    </div>
-                    <div className="review-stars">
-                      {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
-                    </div>
-                    <p className="review-text">{rev.text}</p>
-                  </div>
-                ))
-              )}
-            </div>
           </div>
 
           <button 

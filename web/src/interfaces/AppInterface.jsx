@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { api } from '../services/api'
-import { APP_DEALS_PRODUCTS } from '../data/appCatalog'
+import { APP_DEALS_PRODUCTS, APP_RETAILER_PRODUCTS } from '../data/appCatalog'
 import AppHeader from '../components/App/AppHeader'
 import AppCategorySection from '../components/App/AppCategorySection'
 import AppWholesaleBanner from '../components/App/AppWholesaleBanner'
@@ -10,16 +10,19 @@ import AppBottomNav from '../components/App/AppBottomNav'
 import AppFooterModal from '../components/App/AppFooterModal'
 import AuthPage from '../components/Auth/AuthPage'
 import AccountProfileView from '../components/Account/AccountProfileView'
+import AppProductDetails from '../components/App/AppProductDetails'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
 import DeliveryLocationModal from '../components/Location/DeliveryLocationModal'
 import AdminDashboard from './AdminDashboard'
 import '../styles/app.css'
 
-export function AppInterface() {
+export function AppInterface({ onLogout }) {
   const [activeTab, setActiveTab] = useState('home')
+  const [selectedProduct, setSelectedProduct] = useState(null)
   const [activeFooterPage, setActiveFooterPage] = useState(null)
   const { location, detectLocation, selectAddress } = useCurrentLocation()
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery')
   const [cartItems, setCartItems] = useState(() => {
     try {
       const saved = localStorage.getItem('subhone_app_cart')
@@ -37,13 +40,8 @@ export function AppInterface() {
   }, [cartItems])
 
   const [orders, setOrders] = useState([])
-
   const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0)
-  const [products, setProducts] = useState(APP_DEALS_PRODUCTS)
-  const [services, setServices] = useState([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [toastMessage, setToastMessage] = useState(null)
+  
   const [user, setUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('subhone_auth_user') || 'null')
@@ -51,6 +49,14 @@ export function AppInterface() {
       return null
     }
   })
+
+  const [products, setProducts] = useState(() => 
+    user?.role === 'retailer' ? APP_RETAILER_PRODUCTS : APP_DEALS_PRODUCTS
+  )
+  const [services, setServices] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [toastMessage, setToastMessage] = useState(null)
 
   const [dbStatus, setDbStatus] = useState({ connected: false, branch: 'vercel-dev' })
 
@@ -104,12 +110,20 @@ export function AppInterface() {
   async function syncUserProfile() {
     try {
       const queryKey = user?.email || user?.phone || user?.id
+      const isSuperAdmin = (user?.email || '').toLowerCase().trim() === 'subhonehealthgroup@gmail.com'
       if (queryKey) {
         const dbProfile = await api.getUserProfile(queryKey)
         if (dbProfile) {
           const updated = { ...user, ...dbProfile }
           setUser(updated)
           localStorage.setItem('subhone_auth_user', JSON.stringify(updated))
+        } else if (!isSuperAdmin) {
+          // Account was deleted from database
+          console.warn('User account deleted or removed from database. Terminating session.')
+          localStorage.removeItem('subhone_auth_user')
+          localStorage.removeItem('app_role')
+          setUser(null)
+          if (onLogout) onLogout()
         }
       }
     } catch (e) {
@@ -123,9 +137,18 @@ export function AppInterface() {
         api.getProducts(),
         api.getServices()
       ])
-      if (prodData && prodData.length > 0) {
-        setProducts(prodData.filter(p => p.is_listed !== false && p.isListed !== false))
+      
+      // Strict separation: If Retailer, use Retailer Catalog. If Customer, use Customer Catalog or DB Products.
+      if (user?.role === 'retailer') {
+        setProducts(APP_RETAILER_PRODUCTS)
+      } else {
+        if (prodData && prodData.length > 0) {
+          setProducts(prodData.filter(p => p.is_listed !== false && p.isListed !== false))
+        } else {
+          setProducts(APP_DEALS_PRODUCTS)
+        }
       }
+
       if (servData && servData.length > 0) {
         setServices(servData)
       }
@@ -176,7 +199,7 @@ export function AppInterface() {
     })
   }
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (selectedPayment = 'COD') => {
     if (cartItems.length === 0) return
     const subtotal = cartItems.reduce((acc, i) => acc + (i.price * i.qty), 0)
     const gst = Math.round(subtotal * 0.12)
@@ -187,6 +210,7 @@ export function AppInterface() {
         userId: user?.id || null,
         totalAmount: finalTotal,
         itemsCount: cartCount,
+        paymentMethod: selectedPayment,
         deliveryAddress: location?.address || 'Retailer Hub, Kolkata, West Bengal 700001',
         recipientName: user?.name || 'Retailer Pharmacy',
         recipientPhone: user?.phone || '9876543210',
@@ -255,14 +279,24 @@ export function AppInterface() {
         isApp={true}
         onSuccess={(u) => {
           setUser(u)
-          if (u.role === 'admin') {
-            setActiveTab('admin')
+          if (u.role === 'admin' || u.role === 'delivery_partner' || u.role === 'staff') {
+            window.location.reload()
           } else {
             setActiveTab('home')
           }
           showToast(`Welcome back, ${u.name}!`)
         }}
         onClose={() => setActiveTab('home')}
+      />
+    )
+  }
+
+  if (selectedProduct) {
+    return (
+      <AppProductDetails
+        product={selectedProduct}
+        onBack={() => setSelectedProduct(null)}
+        onAddToCart={handleAddToCart}
       />
     )
   }
@@ -323,7 +357,8 @@ export function AppInterface() {
                   <AppProductCard 
                     key={product.id} 
                     product={product} 
-                    onAddToCart={handleAddToCart} 
+                    onAddToCart={handleAddToCart}
+                    onProductClick={() => setSelectedProduct(product)}
                   />
                 ))}
               </div>
@@ -353,19 +388,20 @@ export function AppInterface() {
                   onClick={() => setSelectedCategory('all')}
                   style={{ background: 'none', border: 'none', color: '#166534', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
                 >
-                  Clear Filter ✕
+                  Clear Filter 
                 </button>
               )}
             </div>
 
             <div className="app-deals-two-col-grid">
-              {filteredProducts.map(product => (
-                <AppProductCard 
-                  key={product.id} 
-                  product={product} 
-                  onAddToCart={handleAddToCart} 
-                />
-              ))}
+                  {filteredProducts.map(product => (
+                    <AppProductCard 
+                      key={product.id} 
+                      product={product} 
+                      onAddToCart={handleAddToCart}
+                      onProductClick={() => setSelectedProduct(product)}
+                    />
+                  ))}
             </div>
           </section>
         )}
@@ -379,7 +415,7 @@ export function AppInterface() {
 
             {orders.length === 0 ? (
               <div className="app-empty-bookings-card">
-                <span className="app-empty-calendar-icon">📦</span>
+                <span className="app-empty-calendar-icon"></span>
                 <h3>No Recent Orders</h3>
                 <p>Your wholesale medicine shipments and dispatch tracking will appear here.</p>
                 <button 
@@ -405,24 +441,24 @@ export function AppInterface() {
 
                     {order.itemsSummary && (
                       <div style={{ fontSize: '12.5px', fontWeight: '600', color: '#334155', margin: '6px 0 2px' }}>
-                        💊 {order.itemsSummary}
+                        {order.itemsSummary}
                       </div>
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', fontSize: '13px' }}>
                       <span style={{ color: '#475569' }}>
-                        📦 {order.itemsCount} {order.itemsCount === 1 ? 'item' : 'items'}
+                        {order.itemsCount} {order.itemsCount === 1 ? 'item' : 'items'}
                       </span>
                       <strong style={{ fontSize: '15px', color: '#0f172a' }}>
                         ₹{order.total.toLocaleString()}
                       </strong>
                     </div>
                     <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '10px', fontSize: '12px', color: '#475569', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>🚚 {order.driverName}</span>
+                      <span>{order.driverName}</span>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span style={{ fontWeight: '700', color: '#166534' }}>ETA: {order.eta}</span>
                         <span style={{ background: '#dcfce7', color: '#15803d', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '700' }}>
-                          ✓ Confirmed
+                           Confirmed
                         </span>
                       </div>
                     </div>
@@ -459,14 +495,14 @@ export function AppInterface() {
                     cursor: 'pointer'
                   }}
                 >
-                  🗑️ Clear Cart
+                  Clear Cart
                 </button>
               )}
             </div>
 
             {cartItems.length === 0 ? (
               <div className="app-empty-bookings-card">
-                <span className="app-empty-calendar-icon">🛒</span>
+                <span className="app-empty-calendar-icon"></span>
                 <h3>Your Cart is Empty</h3>
                 <p>Add authentic medicine batches with distributor discounts to your wholesale order.</p>
                 <button 
@@ -564,7 +600,7 @@ export function AppInterface() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>📍</span>
+                          <span style={{ fontSize: '18px' }}></span>
                           <div>
                             <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Delivery Address</span>
                             <p style={{ margin: 0, fontSize: '12.5px', fontWeight: '700', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '190px' }}>
@@ -579,7 +615,7 @@ export function AppInterface() {
                         <button
                           className="app-hero-orange-btn"
                           style={{ width: '100%', height: '48px', fontSize: '15px', fontWeight: '800' }}
-                          onClick={handlePlaceOrder}
+                          onClick={() => setActiveTab('checkout_address')}
                         >
                           Place Wholesale Order (₹{finalTotal.toLocaleString()}) →
                         </button>
@@ -589,6 +625,125 @@ export function AppInterface() {
                 })()}
               </div>
             )}
+          </section>
+        )}
+
+        {activeTab === 'checkout_address' && (
+          <section className="app-tab-section" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="app-tab-header">
+              <h2>Confirm Delivery Address</h2>
+              <p>Where should we deliver this wholesale order?</p>
+            </div>
+            
+            <div style={{ flex: 1, padding: '16px' }}>
+              <div 
+                style={{
+                  background: '#fff',
+                  border: '2px solid #0ea5e9',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '20px',
+                  boxShadow: '0 4px 6px -1px rgba(14,165,233,0.1)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                  <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '8px', borderRadius: '50%' }}>📍</div>
+                  <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>Delivery Location</h3>
+                </div>
+                <p style={{ margin: '0 0 16px 0', color: '#475569', fontSize: '14px', lineHeight: 1.5 }}>
+                  {location?.address || 'Retailer Hub, Kolkata, West Bengal 700001'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsLocationModalOpen(true)}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                >
+                  Change Address
+                </button>
+              </div>
+            </div>
+
+            <div className="app-checkout-sticky-bar" style={{ padding: '16px', background: '#fff', borderTop: '1px solid #e2e8f0' }}>
+              <button
+                className="app-hero-orange-btn"
+                style={{ width: '100%', height: '48px', fontSize: '15px', fontWeight: '800' }}
+                onClick={() => setActiveTab('checkout_payment')}
+              >
+                Confirm & Proceed to Payment →
+              </button>
+              <button
+                style={{ width: '100%', height: '40px', background: 'transparent', border: 'none', color: '#64748b', fontWeight: '600', marginTop: '8px', cursor: 'pointer' }}
+                onClick={() => setActiveTab('cart')}
+              >
+                Back to Cart
+              </button>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'checkout_payment' && (
+          <section className="app-tab-section" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="app-tab-header">
+              <h2>Payment Method</h2>
+              <p>Select how you want to pay for your wholesale order</p>
+            </div>
+            
+            <div style={{ flex: 1, padding: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {['Cash on Delivery', 'UPI / QR Scan on Delivery', 'Credit/Debit Card'].map(method => (
+                  <div 
+                    key={method}
+                    onClick={() => setPaymentMethod(method)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: '#fff',
+                      border: paymentMethod === method ? '2px solid #0ea5e9' : '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      cursor: 'pointer',
+                      boxShadow: paymentMethod === method ? '0 4px 6px -1px rgba(14,165,233,0.1)' : 'none'
+                    }}
+                  >
+                    <span style={{ fontSize: '15px', fontWeight: '600', color: '#0f172a' }}>{method}</span>
+                    <div style={{ 
+                      width: '20px', 
+                      height: '20px', 
+                      borderRadius: '50%', 
+                      border: paymentMethod === method ? '6px solid #0ea5e9' : '2px solid #cbd5e1',
+                      background: '#fff'
+                    }}></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="app-checkout-sticky-bar" style={{ padding: '16px', background: '#fff', borderTop: '1px solid #e2e8f0' }}>
+              <button
+                className="app-hero-orange-btn"
+                style={{ width: '100%', height: '48px', fontSize: '15px', fontWeight: '800' }}
+                onClick={() => handlePlaceOrder(paymentMethod)}
+              >
+                Confirm Order
+              </button>
+              <button
+                style={{ width: '100%', height: '40px', background: 'transparent', border: 'none', color: '#64748b', fontWeight: '600', marginTop: '8px', cursor: 'pointer' }}
+                onClick={() => setActiveTab('checkout_address')}
+              >
+                Back to Address
+              </button>
+            </div>
           </section>
         )}
 
@@ -604,7 +759,7 @@ export function AppInterface() {
             ) : (
               <div className="app-account-summary-card" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%' }}>
-                  <div className="app-user-avatar-lg" style={{ background: '#eff6ff', color: '#2563eb' }}>👤</div>
+                  <div className="app-user-avatar-lg" style={{ background: '#eff6ff', color: '#2563eb' }}></div>
                   <div className="app-account-meta">
                     <h3 style={{ margin: 0 }}>Guest Retailer</h3>
                     <p style={{ margin: '2px 0 0' }}>Sign in to view wholesale margins & order medicine batches</p>
@@ -631,23 +786,23 @@ export function AppInterface() {
 
             <div className="app-account-quick-links">
               <div className="app-account-link-item" onClick={() => setActiveFooterPage('license')}>
-                <span>🏛️ Wholesale Pharmacy License & FSSAI</span>
+                <span>Wholesale Pharmacy License & FSSAI</span>
                 <span>›</span>
               </div>
               <div className="app-account-link-item" onClick={() => setActiveFooterPage('about')}>
-                <span>ℹ️ About Subhone Health Group</span>
+                <span>About Subhone Health Group</span>
                 <span>›</span>
               </div>
               <div className="app-account-link-item" onClick={() => setActiveFooterPage('terms')}>
-                <span>📜 Wholesale Terms & Conditions</span>
+                <span>Wholesale Terms & Conditions</span>
                 <span>›</span>
               </div>
               <div className="app-account-link-item" onClick={() => setActiveFooterPage('returns')}>
-                <span>🔄 Return & Replacement Policy</span>
+                <span>Return & Replacement Policy</span>
                 <span>›</span>
               </div>
               <div className="app-account-link-item" onClick={() => setActiveFooterPage('privacy')}>
-                <span>🔒 Privacy & Data Protection</span>
+                <span>Privacy & Data Protection</span>
                 <span>›</span>
               </div>
             </div>
@@ -682,7 +837,7 @@ export function AppInterface() {
       {/* Toast Feedback Notification */}
       {toastMessage && (
         <div className="app-toast-alert">
-          <span>✓ {toastMessage}</span>
+          <span> {toastMessage}</span>
         </div>
       )}
     </div>

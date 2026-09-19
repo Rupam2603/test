@@ -69,21 +69,21 @@ export function AppFooter({ onOpenPage }) {
 
       <div className="app-footer-contacts">
         <div className="app-contact-box">
-          <span>📍</span>
+          <span></span>
           <div>
             <strong>Registered Office:</strong>
             <p>Pandit Satghara, Mallickpara, Serampore, Hooghly, West Bengal, Pin- 712203</p>
           </div>
         </div>
         <div className="app-contact-box">
-          <span>📞</span>
+          <span></span>
           <div>
             <strong>Support Line:</strong>
             <p><a href="tel:+919836307553">+91 9836307553</a></p>
           </div>
         </div>
         <div className="app-contact-box">
-          <span>✉️</span>
+          <span></span>
           <div>
             <strong>Email:</strong>
             <p><a href="mailto:subhonehealthgroup@gmail.com">subhonehealthgroup@gmail.com</a></p>

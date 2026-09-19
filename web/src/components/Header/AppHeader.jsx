@@ -9,7 +9,7 @@ export function AppHeader({ title = 'SubhOne Health', onMenuClick, onNotificatio
           aria-label="Menu"
           onClick={() => onMenuClick ? onMenuClick() : alert('SubhOne Health Group Menu')}
         >
-          <span>☰</span>
+          <span></span>
         </button>
         
         <div className="app-title-container">
@@ -21,7 +21,7 @@ export function AppHeader({ title = 'SubhOne Health', onMenuClick, onNotificatio
           aria-label="Notifications"
           onClick={() => onNotificationClick ? onNotificationClick() : alert('No new notifications')}
         >
-          <span>🔔</span>
+          <span></span>
         </button>
       </div>
     </header>

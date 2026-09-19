@@ -165,7 +165,22 @@ export const api = {
     try {
       const dbProducts = await fetchDbProducts(filterOptions)
       if (dbProducts && dbProducts.length > 0) {
-        return dbProducts
+        // Merge mock data missing fields to ensure rich UI (e.g. discount, mrp, pack)
+        return dbProducts.map(dbP => {
+          const mockMatch = MOCK_PRODUCTS.find(m => String(m.id) === String(dbP.id) || String(m.numericId) === String(dbP.numericId) || m.name === dbP.name)
+          if (mockMatch) {
+            return {
+              ...mockMatch,
+              ...dbP,
+              // Only override these if DB doesn't have them
+              mrp: dbP.mrp || mockMatch.mrp,
+              discount: dbP.discount || mockMatch.discount,
+              pack: dbP.pack || mockMatch.pack,
+              tag: dbP.tag || mockMatch.tag
+            }
+          }
+          return dbP
+        })
       }
       return MOCK_PRODUCTS
     } catch (error) {
@@ -352,6 +367,193 @@ export const api = {
     } catch (e) {
       console.warn('getAllProducts note:', e.message)
       return []
+    }
+  },
+
+  // ── Admin-only: Update product fields (listed, stock, flash sale, featured, prices)
+  async updateProduct(productId, fields) {
+    try {
+      const { updateDbProduct } = await import('./db')
+      return await updateDbProduct(productId, fields)
+    } catch (e) {
+      console.warn('updateProduct note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Change user role ───────────────────────────────────────
+  async updateUserRole(userId, email, newRole) {
+    try {
+      const { updateDbUserRole } = await import('./db')
+      return await updateDbUserRole(userId, email, newRole)
+    } catch (e) {
+      console.warn('updateUserRole note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Approve Retailer ───────────────────────────────────────
+  async approveRetailer(userId, email) {
+    try {
+      const { approveDbRetailer } = await import('./db')
+      return await approveDbRetailer(userId, email)
+    } catch (e) {
+      console.warn('approveRetailer note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Reject Retailer ────────────────────────────────────────
+  async rejectRetailer(userId, email) {
+    try {
+      const { rejectDbRetailer } = await import('./db')
+      return await rejectDbRetailer(userId, email)
+    } catch (e) {
+      console.warn('rejectRetailer note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Add user ──────────────────────────────────────────────
+  async addUser(userData) {
+    try {
+      const { insertDbUser } = await import('./db')
+      return await insertDbUser(userData)
+    } catch (e) {
+      console.warn('addUser note:', e.message)
+      return null
+    }
+  },
+
+  // ── Admin-only: Remove / Delete user ──────────────────────────────────
+  async deleteUser(userId, email, phone) {
+    try {
+      const { deleteDbUser } = await import('./db')
+      return await deleteDbUser(userId, email, phone)
+    } catch (e) {
+      console.warn('deleteUser note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Fetch a specific user's order history ─────────────────
+  async getUserOrders(userId, email) {
+    try {
+      const { fetchDbUserOrders } = await import('./db')
+      return await fetchDbUserOrders(userId, email)
+    } catch (e) {
+      console.warn('getUserOrders note:', e.message)
+      return []
+    }
+  },
+
+  // ── Admin-only: Advance lab booking status ────────────────────────────
+  async updateBookingStatus(bookingId, newStatus) {
+    try {
+      const { updateDbBookingStatus } = await import('./db')
+      return await updateDbBookingStatus(bookingId, newStatus)
+    } catch (e) {
+      console.warn('updateBookingStatus note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Analytics data (revenue chart, top products, status pie) ─
+  async getAnalytics(days = 30) {
+    try {
+      const { fetchDbAnalytics } = await import('./db')
+      return await fetchDbAnalytics(days)
+    } catch (e) {
+      console.warn('getAnalytics note:', e.message)
+      return { dailyRevenue: [], statusBreakdown: [], topProducts: [] }
+    }
+  },
+
+  // ── Admin-only: Assign delivery partner to order ──────────────────────
+  async assignDeliveryPartner(orderId, partnerName, partnerPhone) {
+    try {
+      const { updateDbOrderDeliveryPartner } = await import('./db')
+      return await updateDbOrderDeliveryPartner(orderId, partnerName, partnerPhone)
+    } catch (e) {
+      console.warn('assignDeliveryPartner note:', e.message)
+      return false
+    }
+  },
+
+  // ── Admin-only: Prescriptions ─────────────────────────────────────────
+  async getPrescriptions() {
+    try {
+      const { fetchDbPrescriptions } = await import('./db')
+      return await fetchDbPrescriptions()
+    } catch (e) {
+      console.warn('getPrescriptions note:', e.message)
+      return []
+    }
+  },
+
+  // ── Admin-only: Add new product ───────────────────────────────────────
+  async addProduct(fields) {
+    try {
+      const { insertDbProduct } = await import('./db')
+      return await insertDbProduct(fields)
+    } catch (e) {
+      console.warn('addProduct note:', e.message)
+      return null
+    }
+  },
+
+  // ── Admin-only: Delete product ────────────────────────────────────────
+  async deleteProduct(productId) {
+    try {
+      const { deleteDbProduct } = await import('./db')
+      return await deleteDbProduct(productId)
+    } catch (e) {
+      console.warn('deleteProduct note:', e.message)
+      return false
+    }
+  },
+
+  // ── Delivery Partner: Fetch assigned orders ───────────────────────────
+  async getDeliveryOrders(partnerName, partnerPhone, partnerId) {
+    try {
+      const { fetchDbDeliveryOrders } = await import('./db')
+      return await fetchDbDeliveryOrders(partnerName, partnerPhone, partnerId)
+    } catch (e) {
+      console.warn('getDeliveryOrders note:', e.message)
+      return []
+    }
+  },
+
+  // ── Delivery Partner: Fetch stats ─────────────────────────────────────
+  async getDeliveryStats(partnerName, partnerPhone, partnerId) {
+    try {
+      const { fetchDbDeliveryStats } = await import('./db')
+      return await fetchDbDeliveryStats(partnerName, partnerPhone, partnerId)
+    } catch (e) {
+      console.warn('getDeliveryStats note:', e.message)
+      return { totalAssigned: 0, deliveredToday: 0, pendingDeliveries: 0, totalDelivered: 0 }
+    }
+  },
+
+  // ── Delivery Partner: Update delivery status ──────────────────────────
+  async updateDeliveryStatus(orderId, newStatus, notes) {
+    try {
+      const { updateDbDeliveryStatus } = await import('./db')
+      return await updateDbDeliveryStatus(orderId, newStatus, notes)
+    } catch (e) {
+      console.warn('updateDeliveryStatus note:', e.message)
+      return false
+    }
+  },
+
+  // ── Delivery Partner: Assign partner to order ─────────────────────────
+  async assignOrderDeliveryPartner(orderId, partnerName, partnerPhone, partnerId) {
+    try {
+      const { updateDbOrderDeliveryPartner } = await import('./db')
+      return await updateDbOrderDeliveryPartner(orderId, partnerName, partnerPhone, partnerId)
+    } catch (e) {
+      console.warn('assignOrderDeliveryPartner note:', e.message)
+      return false
     }
   }
 }

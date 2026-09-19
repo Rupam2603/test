@@ -29,7 +29,7 @@
   font-size: 24px;
   color: #ffffff;
   margin: 0 0 4px 0;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.5px;
 }
 
@@ -84,7 +84,7 @@
   font-size: 15px;
   color: #ffffff;
   margin: 0 0 16px 0;
-  font-weight: 700;
+  font-weight: 500;
   position: relative;
 }
 
@@ -275,7 +275,7 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #c8e6c9;
-  font-weight: 700;
+  font-weight: 500;
   display: block;
   margin-bottom: 4px;
 }
@@ -283,7 +283,7 @@
 .modal-title {
   margin: 0;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 600;
   color: #ffffff;
 }
 
@@ -327,7 +327,7 @@
   font-size: 17px;
   color: #1b5e20;
   margin: 0 0 8px 0;
-  font-weight: 700;
+  font-weight: 500;
   border-bottom: 1px solid #e8f5e9;
   padding-bottom: 4px;
 }
@@ -364,7 +364,7 @@
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   color: #1b5e20;
   border: 1px solid #a5d6a7;
 }
@@ -417,4 +417,6 @@
 .back-btn:hover {
   background: #1b5e20;
 }
+
+
 

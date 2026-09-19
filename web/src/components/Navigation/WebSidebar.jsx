@@ -2,11 +2,11 @@ import React from 'react'
 
 export function WebSidebar({ activeTab, onTabChange }) {
   const menuItems = [
-    { id: 'home', label: 'Home', icon: '🏠' },
-    { id: 'products', label: 'Products', icon: '🛍️' },
-    { id: 'services', label: 'Services', icon: '💆' },
-    { id: 'bookings', label: 'My Bookings', icon: '📅' },
-    { id: 'profile', label: 'Profile', icon: '👤' },
+    { id: 'home', label: 'Home', icon: '' },
+    { id: 'products', label: 'Products', icon: '' },
+    { id: 'services', label: 'Services', icon: '' },
+    { id: 'bookings', label: 'My Bookings', icon: '' },
+    { id: 'profile', label: 'Profile', icon: '' },
   ]
 
   return (

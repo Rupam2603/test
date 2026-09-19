@@ -50,12 +50,12 @@ export function PrescriptionUploadModal({ isOpen, onClose, onSuccess, user }) {
           <div className="tracker-brand-badge">
             <span className="pulse-dot" style={{ background: '#34d399' }}></span>
             <div className="badge-text-group">
-              <span className="fast-tag" style={{ color: '#a7f3d0' }}>📋 CLINICAL PHARMACY</span>
+              <span className="fast-tag" style={{ color: '#a7f3d0' }}> CLINICAL PHARMACY</span>
               <h3 className="tracker-heading">Upload Doctor's Prescription</h3>
             </div>
           </div>
           <button type="button" className="tracker-close-btn" onClick={onClose} aria-label="Close modal">
-            ✕
+            
           </button>
         </div>
 
@@ -64,7 +64,7 @@ export function PrescriptionUploadModal({ isOpen, onClose, onSuccess, user }) {
           {uploadSuccess ? (
             <div style={{ textAlign: 'center', padding: '20px 10px' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 16px' }}>
-                ✓
+                
               </div>
               <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px' }}>
                 Prescription Uploaded Successfully!
@@ -83,7 +83,7 @@ export function PrescriptionUploadModal({ isOpen, onClose, onSuccess, user }) {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#64748b' }}>Status:</span>
-                  <span style={{ color: '#059669', fontWeight: '800' }}>⚡ Under Verification (Est. 5 mins)</span>
+                  <span style={{ color: '#059669', fontWeight: '800' }}> Under Verification (Est. 5 mins)</span>
                 </div>
               </div>
               <button
@@ -116,7 +116,7 @@ export function PrescriptionUploadModal({ isOpen, onClose, onSuccess, user }) {
                   style={{ display: 'none' }}
                   onChange={handleFileChange}
                 />
-                <div style={{ fontSize: '36px', marginBottom: '8px' }}>📄</div>
+                <div style={{ fontSize: '36px', marginBottom: '8px' }}></div>
                 <h4 style={{ margin: '0 0 4px', fontSize: '15px', color: '#14532d', fontWeight: '800' }}>
                   {file ? file.name : 'Click to Upload or Drag Prescription'}
                 </h4>
@@ -179,7 +179,7 @@ export function PrescriptionUploadModal({ isOpen, onClose, onSuccess, user }) {
                   disabled={isSubmitting}
                   style={{ flex: 2, height: '44px', borderRadius: '9999px', border: 'none', background: '#16a34a', color: '#ffffff', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)' }}
                 >
-                  {isSubmitting ? 'Verifying with Pharmacist...' : 'Submit Prescription 📄'}
+                  {isSubmitting ? 'Verifying with Pharmacist...' : 'Submit Prescription '}
                 </button>
               </div>
             </form>

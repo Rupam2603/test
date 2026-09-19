@@ -12,6 +12,9 @@ export function ProductCard({ product, onAddToCart, onSelectProduct }) {
       tabIndex={onSelectProduct ? 0 : undefined}
     >
       <div className="product-image">
+        {product.discount && (
+          <span className="product-discount-badge">{product.discount}</span>
+        )}
         <img src={product.image} alt={product.name} loading="lazy" />
       </div>
       
@@ -20,7 +23,10 @@ export function ProductCard({ product, onAddToCart, onSelectProduct }) {
         <p className="product-description">{product.description}</p>
         
         <div className="product-footer">
-          <span className="product-price">₹{product.price}</span>
+          <div className="price-container">
+            <span className="product-price">₹{product.price}</span>
+            {product.mrp && <span className="product-mrp">₹{product.mrp}</span>}
+          </div>
           
           <button 
             className="add-to-cart-btn"

@@ -5,72 +5,55 @@
  */
 
 // Visual Category Cards corresponding to active listed categories
+import monsoonImg from '../assets/images/monsoon_care_1789478915794.jpg';
+import immunityImg from '../assets/images/immunity_boosters_1789478930521.jpg';
+import painImg from '../assets/images/pain_relief_1789478952145.jpg';
+import babyImg from '../assets/images/baby_care_1789479016762.jpg';
+import personalImg from '../assets/images/personal_care_1789479031649.jpg';
+import devicesImg from '../assets/images/health_devices_1789479047898.jpg';
+
 export const HOME_CATEGORY_CARDS = [
+  {
+    id: 'monsoon',
+    categoryName: 'Monsoon Health & Antiseptics',
+    title: 'Monsoon Care',
+    image: monsoonImg,
+    textColor: '#1e3a8a'
+  },
+  {
+    id: 'immunity',
+    categoryName: 'Daily Wellness & Immunity',
+    title: 'Immunity Boosters',
+    image: immunityImg,
+    textColor: '#1e3a8a'
+  },
   {
     id: 'pain',
     categoryName: 'Pain Relief & Muscle Care',
     title: 'Pain Relief',
-    subtitle: 'Joints, Gels, Balms & Muscle Sprays',
-    badge: 'Fast Relief',
-    icon: '⚡',
-    gradient: 'linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)',
-    borderColor: '#fecdd3',
-    textColor: '#9f1239'
+    image: painImg,
+    textColor: '#1e3a8a'
   },
   {
-    id: 'wellness',
-    categoryName: 'Daily Wellness & Immunity',
-    title: 'Wellness & Immunity',
-    subtitle: 'Energy Drinks, Honey & Nutrition',
-    badge: '100% Genuine',
-    icon: '🍊',
-    gradient: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-    borderColor: '#a7f3d0',
-    textColor: '#065f46'
+    id: 'baby',
+    categoryName: 'Baby Care',
+    title: 'Baby Care',
+    image: babyImg,
+    textColor: '#1e3a8a'
   },
   {
-    id: 'monsoon',
-    categoryName: 'Monsoon Health & Antiseptics',
-    title: 'Antiseptics & First Aid',
-    subtitle: 'Disinfectants, Liquids & Antiseptic Care',
-    badge: 'Clinical Safe',
-    icon: '💧',
-    gradient: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
-    borderColor: '#99f6e4',
-    textColor: '#115e59'
+    id: 'personal',
+    categoryName: 'Personal Care',
+    title: 'Personal Care',
+    image: personalImg,
+    textColor: '#1e3a8a'
   },
   {
-    id: 'digestive',
-    categoryName: 'Diet & Digestive Health',
-    title: 'Digestive Health',
-    subtitle: 'Fast Antacids & Acidity Relief',
-    badge: 'Instant Action',
-    icon: '🌿',
-    gradient: 'linear-gradient(135deg, #fefce8 0%, #fef08a 100%)',
-    borderColor: '#fde047',
-    textColor: '#854d0e'
-  },
-  {
-    id: 'supplies',
+    id: 'devices',
     categoryName: 'Medical Supplies & Devices',
-    title: 'Medical Supplies',
-    subtitle: 'Surgical Masks & Hospital Cotton',
-    badge: 'Certified',
-    icon: '🩺',
-    gradient: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
-    borderColor: '#fed7aa',
-    textColor: '#9a3412'
-  },
-  {
-    id: 'mens',
-    categoryName: "Men's Health & Vitality",
-    title: "Men's Grooming & Care",
-    subtitle: 'Face Washes, Deodorants & Perfumes',
-    badge: 'Premium Brands',
-    icon: '👔',
-    gradient: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-    borderColor: '#cbd5e1',
-    textColor: '#334155'
+    title: 'Health Devices',
+    image: devicesImg,
+    textColor: '#1e3a8a'
   }
 ];
 
@@ -363,22 +346,22 @@ export const DIAGNOSTIC_PACKAGES = [
 // Trust Badges
 export const TRUST_FEATURES = [
   {
-    icon: '🛡️',
+    icon: '',
     title: '100% Genuine Medicines',
     desc: 'Direct manufacturer sourcing with verified batch test certificates.'
   },
   {
-    icon: '⚡',
+    icon: '',
     title: '30-Minute Express Delivery',
     desc: 'Doorstep medicine dispatch & fast home diagnostic sample pickup.'
   },
   {
-    icon: '🔬',
+    icon: '',
     title: 'NABL Certified Laboratories',
     desc: 'Accurate clinical diagnostics verified by certified senior pathologists.'
   },
   {
-    icon: '🩺',
+    icon: '',
     title: 'Registered Pharmacists',
     desc: 'Every prescription is clinically checked before packaging.'
   }

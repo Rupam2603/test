@@ -20,7 +20,7 @@ function RetailerMobileHeader({ user, onLogout }) {
     }}>
       <div>
         <div style={{ fontSize: '15px', fontWeight: '800', color: '#fff', lineHeight: 1.2 }}>
-          🏪 Retailer Portal
+           Retailer Portal
         </div>
         {user?.shopName && (
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>
@@ -50,9 +50,9 @@ function RetailerMobileHeader({ user, onLogout }) {
 // ─── Mobile Bottom Nav ────────────────────────────────────────────────────────
 function RetailerBottomNav({ activeTab, setActiveTab }) {
   const tabs = [
-    { id: 'orders', icon: '📦', label: 'Orders' },
-    { id: 'alerts', icon: '📉', label: 'Alerts' },
-    { id: 'invoices', icon: '🧾', label: 'Invoices' },
+    { id: 'orders', icon: '', label: 'Orders' },
+    { id: 'alerts', icon: '', label: 'Alerts' },
+    { id: 'invoices', icon: '', label: 'Invoices' },
   ]
   return (
     <nav style={{
@@ -193,9 +193,9 @@ export default function RetailerPortal({ onLogout, isApp = false, user }) {
           fontWeight: '700',
           color: '#0c4a6e'
         }}>
-          {activeTab === 'orders' && '📦 Wholesale Ordering'}
-          {activeTab === 'alerts' && '📉 Low Stock Alerts'}
-          {activeTab === 'invoices' && '🧾 Invoices & Billing'}
+          {activeTab === 'orders' && ' Wholesale Ordering'}
+          {activeTab === 'alerts' && ' Low Stock Alerts'}
+          {activeTab === 'invoices' && ' Invoices & Billing'}
         </div>
 
         <main style={{ flex: 1, overflowY: 'auto' }}>
@@ -229,16 +229,16 @@ export default function RetailerPortal({ onLogout, isApp = false, user }) {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="admin-brand">🏪 Retailer Portal</div>
+        <div className="admin-brand"> Retailer Portal</div>
         <nav className="admin-nav">
           <button className={`admin-nav-item ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-            📦 Bulk Orders
+             Bulk Orders
           </button>
           <button className={`admin-nav-item ${activeTab === 'alerts' ? 'active' : ''}`} onClick={() => setActiveTab('alerts')}>
-            📉 Low Stock Alerts
+             Low Stock Alerts
           </button>
           <button className={`admin-nav-item ${activeTab === 'invoices' ? 'active' : ''}`} onClick={() => setActiveTab('invoices')}>
-            🧾 Invoices
+             Invoices
           </button>
         </nav>
         <button className="admin-logout-btn" onClick={onLogout}>Logout Securely</button>

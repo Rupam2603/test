@@ -68,12 +68,12 @@ export function DiagnosticBookingModal({ isOpen, onClose, selectedService, user,
           <div className="tracker-brand-badge">
             <span className="pulse-dot" style={{ background: '#a855f7' }}></span>
             <div className="badge-text-group">
-              <span className="fast-tag" style={{ color: '#d8b4fe' }}>🧪 NABL ACCREDITED LAB</span>
+              <span className="fast-tag" style={{ color: '#d8b4fe' }}> NABL ACCREDITED LAB</span>
               <h3 className="tracker-heading">Book Home Sample Collection</h3>
             </div>
           </div>
           <button type="button" className="tracker-close-btn" onClick={onClose} aria-label="Close modal">
-            ✕
+            
           </button>
         </div>
 
@@ -81,7 +81,7 @@ export function DiagnosticBookingModal({ isOpen, onClose, selectedService, user,
           {bookingResult ? (
             <div style={{ textAlign: 'center', padding: '16px 10px' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#f3e8ff', color: '#7e22ce', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', margin: '0 auto 16px' }}>
-                ✓
+                
               </div>
               <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' }}>
                 Lab Test Appointment Confirmed!
@@ -128,7 +128,7 @@ export function DiagnosticBookingModal({ isOpen, onClose, selectedService, user,
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                 <div>
                   <h4 style={{ margin: '0 0 2px', fontSize: '14.5px', fontWeight: '800', color: '#0f172a' }}>{serviceName}</h4>
-                  <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700' }}>✓ Free Certified Home Collection</span>
+                  <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700' }}> Free Certified Home Collection</span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '18px', fontWeight: '900', color: '#7e22ce' }}>₹{servicePrice}</span>

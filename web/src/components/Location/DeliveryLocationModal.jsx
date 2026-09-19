@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
 import { api } from '../../services/api'
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAP_API || ''
@@ -130,15 +129,17 @@ export function DeliveryLocationModal({
     <div className="tracker-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="tracker-modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
         {/* Header */}
-        <div className="tracker-hud-header" style={{ background: '#0f172a' }}>
+        <div className="tracker-hud-header" style={{ background: '#ffffff', borderBottom: '1px solid #f3f4f6', padding: '20px' }}>
           <div className="tracker-brand-badge">
-            <span className="pulse-dot" style={{ background: '#10b981' }}></span>
+            <span className="pulse-dot" style={{ background: '#22c55e' }}></span>
             <div className="badge-text-group">
-              <span className="fast-tag" style={{ color: '#a7f3d0' }}>📍 DELIVERY DESTINATION</span>
-              <h3 className="tracker-heading">Select Delivery Address</h3>
+              <span className="fast-tag" style={{ color: '#6b7280', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px' }}>DELIVERY DESTINATION</span>
+              <h3 className="tracker-heading" style={{ color: '#111827', fontSize: '18px', margin: '4px 0 0 0' }}>Select Address</h3>
             </div>
           </div>
-          <button type="button" className="tracker-close-btn" onClick={onClose} aria-label="Close modal">
+          <button type="button" className="tracker-close-btn" onClick={onClose} aria-label="Close modal" style={{
+            background: '#f3f4f6', color: '#4b5563', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+          }}>
             ✕
           </button>
         </div>
@@ -146,99 +147,52 @@ export function DeliveryLocationModal({
         <div style={{ padding: '20px', overflowY: 'auto', maxHeight: '78vh' }}>
           {/* Current Location GPS Section */}
           <div style={{
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-            border: '1.5px solid #86efac',
+            background: '#ffffff',
+            border: '1px solid #e5e7eb',
             borderRadius: '16px',
-            padding: '16px',
-            marginBottom: '20px'
+            padding: '20px',
+            marginBottom: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '20px' }}>🎯</span>
-                <strong style={{ fontSize: '15px', color: '#065f46' }}>Your Current Location</strong>
+                <strong style={{ fontSize: '16px', color: '#111827' }}>Current Location</strong>
               </div>
               <button
                 type="button"
                 onClick={handleUseCurrentLocation}
                 disabled={isLocating || location?.loading}
                 style={{
-                  background: '#16a34a',
-                  color: '#ffffff',
-                  border: 'none',
+                  background: '#f9fafb',
+                  color: '#2563eb',
+                  border: '1px solid #bfdbfe',
                   borderRadius: '9999px',
-                  padding: '7px 14px',
-                  fontSize: '12.5px',
-                  fontWeight: '800',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '700',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)'
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <span>📍</span>
-                <span>{isLocating || location?.loading ? 'Detecting GPS...' : 'Locate Current Location'}</span>
+                <span>{isLocating || location?.loading ? 'Detecting...' : 'Detect'}</span>
               </button>
             </div>
 
-            {/* Google Map Pinpoint Preview */}
-            <div style={{ height: '170px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #a7f3d0', marginBottom: '12px', position: 'relative' }}>
-              {GOOGLE_MAPS_KEY && !hasMapError ? (
-                <APIProvider apiKey={GOOGLE_MAPS_KEY} onError={() => setHasMapError(true)}>
-                  <Map
-                    style={{ width: '100%', height: '100%' }}
-                    defaultCenter={currentCoords}
-                    center={currentCoords}
-                    defaultZoom={15}
-                    zoom={15}
-                    mapId="LOCATION_PICKER_MAP"
-                    disableDefaultUI={true}
-                    zoomControl={true}
-                    gestureHandling="greedy"
-                  >
-                    <AdvancedMarker position={currentCoords}>
-                      <div style={{
-                        background: '#16a34a',
-                        color: '#ffffff',
-                        padding: '6px 10px',
-                        borderRadius: '9999px',
-                        fontWeight: '800',
-                        fontSize: '11px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                        border: '2px solid #ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <span>📍</span>
-                        <span>Deliver Here</span>
-                      </div>
-                    </AdvancedMarker>
-                  </Map>
-                </APIProvider>
-              ) : (
-                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ecfdf5', color: '#047857' }}>
-                  <span style={{ fontSize: '28px' }}>📍</span>
-                  <strong style={{ fontSize: '13px', marginTop: '4px' }}>GPS Location Pinpointed</strong>
-                  <span style={{ fontSize: '11px', color: '#059669' }}>
-                    {location?.lat?.toFixed(4)}°N, {location?.lng?.toFixed(4)}°E
-                  </span>
-                </div>
-              )}
-            </div>
-
             {/* Detected Address Details */}
-            <div style={{ background: '#ffffff', borderRadius: '10px', padding: '12px 14px', border: '1px solid #bbf7d0', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                  {location?.isExact ? '✓ Exact GPS Detected' : '📍 Selected Location'}
+            <div style={{ background: '#f9fafb', borderRadius: '12px', padding: '16px', border: '1px solid #f3f4f6', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#059669', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {location?.isExact ? 'Exact GPS Match' : 'Detected Area'}
                 </span>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>
-                  PIN: <strong>{location?.pincode || '700016'}</strong>
+                <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600' }}>
+                  PIN: <strong style={{ color: '#111827' }}>{location?.pincode || '700016'}</strong>
                 </span>
               </div>
-              <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', lineHeight: '1.4' }}>
-                {location?.address || 'Park Street, Kolkata, West Bengal 700016'}
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: '500', color: '#374151', lineHeight: '1.5' }}>
+                {location?.address || 'Detecting exact street location...'}
               </p>
             </div>
 
@@ -248,21 +202,22 @@ export function DeliveryLocationModal({
               onClick={handleConfirmCurrentLocation}
               style={{
                 width: '100%',
-                height: '42px',
-                borderRadius: '10px',
+                height: '46px',
+                borderRadius: '12px',
                 border: 'none',
-                background: '#0f172a',
+                background: '#111827',
                 color: '#ffffff',
-                fontSize: '13.5px',
-                fontWeight: '800',
+                fontSize: '14px',
+                fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                transition: 'all 0.2s ease'
               }}
             >
-              <span>Deliver to Current Location ✓</span>
+              <span>Deliver to Current Location </span>
             </button>
           </div>
 
@@ -364,7 +319,7 @@ export function DeliveryLocationModal({
                     onClick={handleAutofillFromLocation}
                     style={{ background: '#ecfdf5', color: '#15803d', border: '1px solid #a7f3d0', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
                   >
-                    📍 Auto-Fill Current Location
+                     Auto-Fill Current Location
                   </button>
                   <button
                     type="button"
@@ -475,7 +430,7 @@ export function DeliveryLocationModal({
                   marginTop: '6px'
                 }}
               >
-                {saving ? 'Saving...' : 'Save & Deliver Here ✓'}
+                {saving ? 'Saving...' : 'Save & Deliver Here '}
               </button>
             </form>
           )}

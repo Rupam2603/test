@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePlatform } from '../hooks/usePlatform'
 import { api } from '../services/api'
+import { APP_DEALS_PRODUCTS, APP_RETAILER_PRODUCTS } from '../data/appCatalog'
 import WebHeader from '../components/Header/WebHeader'
 import WebMenuDrawer from '../components/Navigation/WebMenuDrawer'
 import WebBottomNav from '../components/Navigation/WebBottomNav'
@@ -18,7 +19,7 @@ import AddressManagementModal from '../components/Account/AddressManagementModal
 import OrderSuccessModal from '../components/Cart/OrderSuccessModal'
 import '../styles/web.css'
 
-export function WebInterface() {
+export function WebInterface({ onLogout }) {
   const { platform } = usePlatform()
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -28,7 +29,18 @@ export function WebInterface() {
     return 'home'
   })
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [products, setProducts] = useState([])
+  
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('subhone_auth_user') || 'null')
+    } catch (e) {
+      return null
+    }
+  })
+
+  const [products, setProducts] = useState(() => 
+    user?.role === 'retailer' ? APP_RETAILER_PRODUCTS : APP_DEALS_PRODUCTS
+  )
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -57,13 +69,32 @@ export function WebInterface() {
     } catch (e) {}
   }, [cartItems])
 
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('subhone_auth_user') || 'null')
-    } catch (e) {
-      return null
+  // Synchronize and verify profile on load
+  useEffect(() => {
+    async function verifyUserProfile() {
+      const queryKey = user?.email || user?.phone || user?.id
+      const isSuperAdmin = (user?.email || '').toLowerCase().trim() === 'subhonehealthgroup@gmail.com'
+      if (queryKey && !isSuperAdmin) {
+        try {
+          const dbProfile = await api.getUserProfile(queryKey)
+          if (dbProfile) {
+            const updated = { ...user, ...dbProfile }
+            setUser(updated)
+            localStorage.setItem('subhone_auth_user', JSON.stringify(updated))
+          } else {
+            console.warn('User deleted by admin. Clearing website session.')
+            localStorage.removeItem('subhone_auth_user')
+            localStorage.removeItem('app_role')
+            setUser(null)
+            if (onLogout) onLogout()
+          }
+        } catch (e) {
+          console.warn('Web profile sync note:', e)
+        }
+      }
     }
-  })
+    verifyUserProfile()
+  }, [])
 
   useEffect(() => {
     loadData()
@@ -73,8 +104,16 @@ export function WebInterface() {
     setLoading(true)
     if (activeTab === 'products' || activeTab === 'category' || activeTab === 'home') {
       const data = await api.getProducts()
-      const listedOnly = (data || []).filter(p => p.is_listed !== false && p.isListed !== false)
-      setProducts(listedOnly)
+      if (user?.role === 'retailer') {
+        setProducts(APP_RETAILER_PRODUCTS)
+      } else {
+        if (data && data.length > 0) {
+          const listedOnly = data.filter(p => p.is_listed !== false && p.isListed !== false)
+          setProducts(listedOnly)
+        } else {
+          setProducts(APP_DEALS_PRODUCTS)
+        }
+      }
     }
     if (activeTab === 'order' || activeTab === 'bookings' || activeTab === 'home') {
       try {
@@ -90,13 +129,13 @@ export function WebInterface() {
   }
 
   const categories = [
-    { id: 'All', name: 'All Listed Medicines', icon: '✨' },
-    { id: 'Pain Relief & Muscle Care', name: 'Pain Relief & Balms', icon: '⚡' },
-    { id: 'Daily Wellness & Immunity', name: 'Wellness & Nutrition', icon: '🍊' },
-    { id: 'Monsoon Health & Antiseptics', name: 'Antiseptics & First Aid', icon: '💧' },
-    { id: 'Diet & Digestive Health', name: 'Digestive Health', icon: '🌿' },
-    { id: 'Medical Supplies & Devices', name: 'Medical Supplies', icon: '🩺' },
-    { id: "Men's Health & Vitality", name: "Men's Grooming", icon: '👔' }
+    { id: 'All', name: 'All Listed Medicines', icon: '' },
+    { id: 'Pain Relief & Muscle Care', name: 'Pain Relief & Balms', icon: '' },
+    { id: 'Daily Wellness & Immunity', name: 'Wellness & Nutrition', icon: '' },
+    { id: 'Monsoon Health & Antiseptics', name: 'Antiseptics & First Aid', icon: '' },
+    { id: 'Diet & Digestive Health', name: 'Digestive Health', icon: '' },
+    { id: 'Medical Supplies & Devices', name: 'Medical Supplies', icon: '' },
+    { id: "Men's Health & Vitality", name: "Men's Grooming", icon: '' }
   ]
 
   const filteredProducts = products.filter(p => {
@@ -156,7 +195,7 @@ export function WebInterface() {
           pack: product.pack || product.subtitle || 'Standard pack',
           price: product.price,
           qty: 1,
-          image: product.image || product.icon || '💊'
+          image: product.image || product.icon || ''
         }
       ]
     })
@@ -212,7 +251,12 @@ export function WebInterface() {
         isApp={false}
         onSuccess={(u) => {
           setUser(u)
-          setActiveTab('home')
+          // If the logged in user is admin or delivery partner, reload so RootNavigator routes to their dedicated panel
+          if (u.role === 'admin' || u.role === 'delivery_partner' || u.role === 'staff') {
+            window.location.reload()
+          } else {
+            setActiveTab('home')
+          }
         }}
         onClose={() => setActiveTab('home')}
       />
@@ -372,7 +416,7 @@ export function WebInterface() {
 
                   {cartItems.length === 0 ? (
                     <div className="empty-state-box">
-                      <span className="empty-icon">🛒</span>
+                      <span className="empty-icon"></span>
                       <h3>Your Cart is Empty</h3>
                       <p>Browse our pharmacy or diagnostic services to add essentials.</p>
                       <button className="primary-btn" onClick={() => setActiveTab('category')}>Browse Catalog</button>
@@ -404,7 +448,7 @@ export function WebInterface() {
                                 onClick={() => removeCartItem(item.id)}
                                 title="Remove item"
                               >
-                                🗑️
+                                
                               </button>
                             </div>
                           </div>
@@ -439,13 +483,13 @@ export function WebInterface() {
                           title="Delivery Address: Click to locate current GPS or change address"
                         >
                           <div className="delivery-card-icon-wrap">
-                            <span className="delivery-card-icon">📍</span>
+                            <span className="delivery-card-icon"></span>
                           </div>
                           <div className="delivery-card-content">
                             <div className="delivery-card-badge-row">
                               <span className="delivery-card-label">DELIVERING TO</span>
                               <span className="delivery-card-gps-tag">
-                                {location?.isExact ? '✓ Current GPS' : '⚡ 10-Min Delivery'}
+                                {location?.isExact ? ' Current GPS' : ' 10-Min Delivery'}
                               </span>
                             </div>
                             <p className="delivery-card-address">
@@ -458,7 +502,7 @@ export function WebInterface() {
                         <button className="web-checkout-btn" onClick={handleCheckout}>
                           Proceed to Checkout →
                         </button>
-                        <p className="safe-checkout-note">🔒 256-Bit Encrypted & 100% Genuine Certified Medicines</p>
+                        <p className="safe-checkout-note"> 256-Bit Encrypted & 100% Genuine Certified Medicines</p>
                       </div>
                     </div>
                   )}
@@ -475,7 +519,7 @@ export function WebInterface() {
 
                   {orders.length === 0 ? (
                     <div className="empty-state-box">
-                      <span className="empty-icon">📦</span>
+                      <span className="empty-icon"></span>
                       <h3>No Orders Placed Yet</h3>
                       <p>Your orders placed on SubhOne will be tracked with real-time GPS dispatch.</p>
                       <button className="primary-btn" onClick={() => setActiveTab('category')}>Order Medicines Now</button>
@@ -501,32 +545,32 @@ export function WebInterface() {
                               <p className="order-date">Placed on {dateStr} • {order.payment_method || 'Cash on Delivery / UPI'}</p>
                             </div>
                             <span className={`order-status-badge ${isDelivered ? 'delivered' : 'in-transit'}`}>
-                              {isDelivered ? '✓ Delivered' : `🚚 ${statusText}`}
+                              {isDelivered ? ' Delivered' : ` ${statusText}`}
                             </span>
                           </div>
 
                           <div className="web-order-timeline">
                             <div className="timeline-step completed">
-                              <div className="step-dot">✓</div>
+                              <div className="step-dot"></div>
                               <span className="step-label">Order Placed</span>
                             </div>
                             <div className="timeline-step completed">
-                              <div className="step-dot">✓</div>
+                              <div className="step-dot"></div>
                               <span className="step-label">Packed at Pharmacy</span>
                             </div>
                             <div className={`timeline-step ${!isDelivered ? 'active' : 'completed'}`}>
-                              <div className="step-dot">{!isDelivered ? '⚡' : '✓'}</div>
+                              <div className="step-dot">{!isDelivered ? '' : ''}</div>
                               <span className="step-label">Rider En Route</span>
                             </div>
                             <div className={`timeline-step ${isDelivered ? 'completed' : ''}`}>
-                              <div className="step-dot">📍</div>
+                              <div className="step-dot"></div>
                               <span className="step-label">Doorstep Delivery</span>
                             </div>
                           </div>
 
                           <div className="web-order-items-preview">
                             <div className="order-item-snippet">
-                              <span className="item-icon">💊</span>
+                              <span className="item-icon"></span>
                               <div>
                                 <strong>{itemsSummary}</strong>
                                 <p>Total: ₹{totalAmt} • Delivery to: {order.delivery_address || order.deliveryAddress || 'Kolkata, West Bengal'}</p>
@@ -534,13 +578,13 @@ export function WebInterface() {
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                               {!isDelivered && (
-                                <button className="track-order-btn" onClick={() => showToast(`Order #${orderId} destination: ${order.delivery_address || order.deliveryAddress || 'Delivery Address'}`)}>Dispatch Active 🚚</button>
+                                <button className="track-order-btn" onClick={() => showToast(`Order #${orderId} destination: ${order.delivery_address || order.deliveryAddress || 'Delivery Address'}`)}>Dispatch Active </button>
                               )}
                               <button 
                                 className="reorder-btn"
                                 onClick={() => showToast(`Invoice downloaded for Order #${orderId}`)}
                               >
-                                Invoice 📄
+                                Invoice 
                               </button>
                             </div>
                           </div>
@@ -611,7 +655,7 @@ export function WebInterface() {
       {/* Universal Toast Alert Banner */}
       {toastMessage && (
         <div className="web-toast-alert" role="alert">
-          <span className="toast-icon">✓</span>
+          <span className="toast-icon"></span>
           <span className="toast-text">{toastMessage}</span>
         </div>
       )}

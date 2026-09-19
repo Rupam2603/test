@@ -110,7 +110,7 @@ export function LiveOrderTrackerModal({
           <div className="tracker-brand-badge">
             <span className="pulse-dot"></span>
             <div className="badge-text-group">
-              <span className="fast-tag">⚡ 10-MIN EXPRESS DELIVERY</span>
+              <span className="fast-tag"> 10-MIN EXPRESS DELIVERY</span>
               <h3 className="tracker-heading">Live Order GPS Tracking</h3>
             </div>
           </div>
@@ -124,7 +124,7 @@ export function LiveOrderTrackerModal({
           </div>
 
           <button type="button" className="tracker-close-btn" onClick={onClose} aria-label="Close live tracker">
-            ✕
+            
           </button>
         </div>
 
@@ -144,7 +144,7 @@ export function LiveOrderTrackerModal({
                 {/* Pharmacy Hub Marker */}
                 <AdvancedMarker position={DEFAULT_HUB_COORDS}>
                   <div className="map-marker-hub" title="SubhOne Express Hub">
-                    <span className="marker-icon">🏥</span>
+                    <span className="marker-icon"></span>
                     <span className="marker-label">Hub #04</span>
                   </div>
                 </AdvancedMarker>
@@ -153,7 +153,7 @@ export function LiveOrderTrackerModal({
                 <AdvancedMarker position={riderLocation}>
                   <div className="map-marker-rider" title="Express Delivery Partner">
                     <div className="rider-scooter-pulse"></div>
-                    <span className="rider-avatar-icon">🛵</span>
+                    <span className="rider-avatar-icon"></span>
                     <span className="rider-eta-tag">{formattedTime}</span>
                   </div>
                 </AdvancedMarker>
@@ -162,7 +162,7 @@ export function LiveOrderTrackerModal({
                 <AdvancedMarker position={customerLocation}>
                   <div className="map-marker-customer" title="Your Exact Delivery Location">
                     <div className="customer-radar-pulse"></div>
-                    <span className="customer-pin-icon">📍</span>
+                    <span className="customer-pin-icon"></span>
                     <span className="customer-tag">Delivery Spot</span>
                   </div>
                 </AdvancedMarker>
@@ -185,7 +185,7 @@ export function LiveOrderTrackerModal({
 
                 {/* Hub Point */}
                 <div className="fallback-hub-point">
-                  <span className="fallback-icon">🏥</span>
+                  <span className="fallback-icon"></span>
                   <span className="point-caption">SubhOne Hub</span>
                 </div>
 
@@ -198,14 +198,14 @@ export function LiveOrderTrackerModal({
                   }}
                 >
                   <div className="rider-ping"></div>
-                  <span className="fallback-icon">🛵</span>
+                  <span className="fallback-icon"></span>
                   <span className="point-caption">Rider ({distanceKm} km)</span>
                 </div>
 
                 {/* Customer Point */}
                 <div className="fallback-customer-point">
                   <div className="radar-beacon"></div>
-                  <span className="fallback-icon">📍</span>
+                  <span className="fallback-icon"></span>
                   <span className="point-caption">You</span>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export function LiveOrderTrackerModal({
               <div className="metric-divider"></div>
               <div className="metric-col">
                 <span className="metric-title">GUARANTEE</span>
-                <span className="metric-val green-text">⚡ On Time (10m)</span>
+                <span className="metric-val green-text"> On Time (10m)</span>
               </div>
             </div>
           </div>
@@ -243,18 +243,18 @@ export function LiveOrderTrackerModal({
                 alt="Delivery Partner"
                 className="rider-img"
               />
-              <span className="rider-online-badge">⚡</span>
+              <span className="rider-online-badge"></span>
             </div>
 
             <div className="rider-info-col">
               <div className="rider-name-row">
                 <h4 className="rider-name">Rajesh Kumar</h4>
-                <span className="rider-rating">★ 4.9 (1,420 orders)</span>
+                <span className="rider-rating"> 4.9 (1,420 orders)</span>
               </div>
               <p className="rider-vehicle">Electric Scooter • WB 02 AX 8841</p>
               <div className="rider-safety-pills">
-                <span className="safety-pill">✓ Temperature 98.4°F</span>
-                <span className="safety-pill">🛡️ Insulated Cold Bag</span>
+                <span className="safety-pill"> Temperature 98.4°F</span>
+                <span className="safety-pill"> Insulated Cold Bag</span>
               </div>
             </div>
 
@@ -265,7 +265,7 @@ export function LiveOrderTrackerModal({
                 onClick={() => alert('Connecting to Delivery Partner Rajesh (+91 98310 99881)...')}
                 title="Call Delivery Partner"
               >
-                📞 Call
+                 Call
               </button>
               <button 
                 type="button" 
@@ -273,7 +273,7 @@ export function LiveOrderTrackerModal({
                 onClick={() => alert('Opening live chat with delivery dispatch...')}
                 title="Message Partner"
               >
-                💬 Chat
+                 Chat
               </button>
             </div>
           </div>
@@ -281,7 +281,7 @@ export function LiveOrderTrackerModal({
           {/* Destination & Order Summary strip */}
           <div className="tracker-dest-strip">
             <div className="dest-info">
-              <span className="dest-icon">🎯</span>
+              <span className="dest-icon"></span>
               <div className="dest-text-wrap">
                 <span className="dest-label">EXACT DELIVERY ADDRESS</span>
                 <p className="dest-address">{userLocation?.address || 'Park Street, Kolkata, WB 700016'}</p>

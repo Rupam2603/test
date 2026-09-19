@@ -39,7 +39,7 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
             title="SubhOne Health Group - Home"
           >
             <img 
-              src="/subhone_logo.png" 
+              src="./subhone_logo.png" 
               alt="SubhOne Health Group Logo" 
               className="web-header-brand-icon"
               onError={(e) => {
@@ -110,7 +110,12 @@ export function WebHeader({ user, onTabChange, onSearch, onToggleMenu, isMenuOpe
                 title="Click to view Account & Profile"
                 aria-label="View Account Profile"
               >
-                <span className="user-avatar-char">{user.name ? user.name[0].toUpperCase() : 'U'}</span>
+                <img 
+                  src={user.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'User')}&backgroundColor=b6e3f4`} 
+                  alt={user.name || 'User'} 
+                  className="user-avatar-char"
+                  style={{ objectFit: 'cover', background: '#fff' }} 
+                />
                 <span className="user-name-text">{user.name}</span>
               </button>
               <button 

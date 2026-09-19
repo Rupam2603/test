@@ -24,7 +24,7 @@ export function AppFooterModal({ pageKey, onClose }) {
             {content.subtitle && <p className="app-modal-subtitle">{content.subtitle}</p>}
           </div>
           <button className="app-modal-close-btn" onClick={onClose} aria-label="Close page">
-            ✕
+            
           </button>
         </div>
 
@@ -44,9 +44,9 @@ export function AppFooterModal({ pageKey, onClose }) {
             <div className="app-license-badge-card">
               <h4>Official Verification Badges</h4>
               <div className="app-badges-row">
-                <span className="app-badge-item">🏛️ WHOLESALE DRUG LICENSE</span>
-                <span className="app-badge-item">🥗 FSSAI: 22823086000064</span>
-                <span className="app-badge-item">📋 UDYAM-WB-07-0138605</span>
+                <span className="app-badge-item"> WHOLESALE DRUG LICENSE</span>
+                <span className="app-badge-item"> FSSAI: 22823086000064</span>
+                <span className="app-badge-item"> UDYAM-WB-07-0138605</span>
               </div>
             </div>
           )}
@@ -54,9 +54,9 @@ export function AppFooterModal({ pageKey, onClose }) {
           <div className="app-modal-contact-box">
             <h4>Direct Wholesale Enquiries</h4>
             <p><strong>Subhone Health Group</strong></p>
-            <p>📍 Pandit Satghara, Mallickpara, Serampore, Hooghly, West Bengal, Pin- 712203</p>
-            <p>📞 Phone: <a href="tel:+919836307553">+91 9836307553</a></p>
-            <p>✉️ Email: <a href="mailto:subhonehealthgroup@gmail.com">subhonehealthgroup@gmail.com</a></p>
+            <p> Pandit Satghara, Mallickpara, Serampore, Hooghly, West Bengal, Pin- 712203</p>
+            <p> Phone: <a href="tel:+919836307553">+91 9836307553</a></p>
+            <p> Email: <a href="mailto:subhonehealthgroup@gmail.com">subhonehealthgroup@gmail.com</a></p>
           </div>
         </div>
 

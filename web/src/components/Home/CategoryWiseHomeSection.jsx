@@ -57,22 +57,18 @@ export function CategoryWiseHomeSection({
           {HOME_CATEGORY_CARDS.map(cat => (
             <div
               key={cat.id}
-              className="home-category-card"
-              style={{ background: cat.gradient, borderColor: cat.borderColor }}
+              className="app-visual-cat-card"
               onClick={() => onSelectCategory(cat.categoryName || cat.id)}
               role="button"
               tabIndex={0}
+              style={{ cursor: 'pointer' }}
             >
-              <div className="home-cat-card-header">
-                <span className="home-cat-card-icon">{cat.icon}</span>
-                <span className="home-cat-card-badge" style={{ color: cat.textColor }}>
-                  {cat.badge}
-                </span>
+              <div className="app-visual-cat-img-box">
+                <img src={cat.image} alt={cat.title || cat.name} loading="lazy" />
               </div>
-              <h4 className="home-cat-card-name" style={{ color: cat.textColor }}>
+              <h4 className="app-visual-cat-title" style={{ color: cat.textColor }}>
                 {cat.title || cat.name}
               </h4>
-              <p className="home-cat-card-desc">{cat.subtitle || cat.desc}</p>
             </div>
           ))}
         </div>
@@ -83,7 +79,7 @@ export function CategoryWiseHomeSection({
         <div className="shelf-header">
           <div>
             <div className="shelf-badge-row">
-              <span className="shelf-pill-tag red">⚡ FAST RELIEF</span>
+              <span className="shelf-pill-tag red">FAST RELIEF</span>
               <span className="shelf-meta-text">Verified Listed Medicines</span>
             </div>
             <h3 className="shelf-title">Pain Relief & Muscle Care</h3>
@@ -112,7 +108,7 @@ export function CategoryWiseHomeSection({
               </div>
               <div className="product-card-details">
                 <div className="product-rating-row">
-                  <span className="rating-pill">{item.rating || '4.8 ★'}</span>
+                  <span className="rating-pill">{item.rating || '4.8 '}</span>
                   <span className="pack-label">{item.pack || item.brand || 'Standard'}</span>
                 </div>
                 <h4 className="product-title" title={item.name}>{item.name}</h4>
@@ -125,14 +121,17 @@ export function CategoryWiseHomeSection({
                   </div>
                   <button
                     type="button"
-                    className="shelf-add-cart-btn"
+                    className="shelf-add-cart-btn icon-only"
                     onClick={(e) => {
                       e.stopPropagation()
                       onAddToCart && onAddToCart(item)
                     }}
                     title={"Add " + item.name + " to cart"}
                   >
-                    + Add
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -147,7 +146,7 @@ export function CategoryWiseHomeSection({
         <div className="shelf-header">
           <div>
             <div className="shelf-badge-row">
-              <span className="shelf-pill-tag green">🌿 100% GENUINE</span>
+              <span className="shelf-pill-tag green">100% GENUINE</span>
               <span className="shelf-meta-text">Daily Defense & Nutrition</span>
             </div>
             <h3 className="shelf-title">Daily Wellness & Immunity</h3>
@@ -176,7 +175,7 @@ export function CategoryWiseHomeSection({
               </div>
               <div className="product-card-details">
                 <div className="product-rating-row">
-                  <span className="rating-pill green">{item.rating || '4.8 ★'}</span>
+                  <span className="rating-pill green">{item.rating || '4.8 '}</span>
                   <span className="pack-label">{item.pack || item.brand || 'Unit'}</span>
                 </div>
                 <h4 className="product-title" title={item.name}>{item.name}</h4>
@@ -189,14 +188,17 @@ export function CategoryWiseHomeSection({
                   </div>
                   <button
                     type="button"
-                    className="shelf-add-cart-btn"
+                    className="shelf-add-cart-btn icon-only"
                     onClick={(e) => {
                       e.stopPropagation()
                       onAddToCart && onAddToCart(item)
                     }}
                     title={"Add " + item.name + " to cart"}
                   >
-                    + Add
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -211,7 +213,7 @@ export function CategoryWiseHomeSection({
         <div className="shelf-header">
           <div>
             <div className="shelf-badge-row">
-              <span className="shelf-pill-tag orange">🩺 HOSPITAL GRADE</span>
+              <span className="shelf-pill-tag orange">HOSPITAL GRADE</span>
               <span className="shelf-meta-text">Certified Clinical Supplies</span>
             </div>
             <h3 className="shelf-title">Medical Supplies & Antiseptic Care</h3>
@@ -240,7 +242,7 @@ export function CategoryWiseHomeSection({
               </div>
               <div className="product-card-details">
                 <div className="product-rating-row">
-                  <span className="rating-pill orange">{item.rating || '4.7 ★'}</span>
+                  <span className="rating-pill orange">{item.rating || '4.7 '}</span>
                   <span className="pack-label">{item.pack || item.brand || 'Pack'}</span>
                 </div>
                 <h4 className="product-title" title={item.name}>{item.name}</h4>
@@ -253,14 +255,17 @@ export function CategoryWiseHomeSection({
                   </div>
                   <button
                     type="button"
-                    className="shelf-add-cart-btn"
+                    className="shelf-add-cart-btn icon-only"
                     onClick={(e) => {
                       e.stopPropagation()
                       onAddToCart && onAddToCart(item)
                     }}
                     title={"Add " + item.name + " to cart"}
                   >
-                    + Add
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -274,7 +279,7 @@ export function CategoryWiseHomeSection({
         <div className="shelf-header">
           <div>
             <div className="shelf-badge-row">
-              <span className="shelf-pill-tag">👔 PREMIUM GROOMING</span>
+              <span className="shelf-pill-tag">PREMIUM GROOMING</span>
               <span className="shelf-meta-text">NIVEA & Park Avenue</span>
             </div>
             <h3 className="shelf-title">Men's Health & Grooming</h3>
@@ -303,7 +308,7 @@ export function CategoryWiseHomeSection({
               </div>
               <div className="product-card-details">
                 <div className="product-rating-row">
-                  <span className="rating-pill">{item.rating || '4.8 ★'}</span>
+                  <span className="rating-pill">{item.rating || '4.8 '}</span>
                   <span className="pack-label">{item.pack || item.brand || 'Standard'}</span>
                 </div>
                 <h4 className="product-title" title={item.name}>{item.name}</h4>
@@ -316,14 +321,17 @@ export function CategoryWiseHomeSection({
                   </div>
                   <button
                     type="button"
-                    className="shelf-add-cart-btn"
+                    className="shelf-add-cart-btn icon-only"
                     onClick={(e) => {
                       e.stopPropagation()
                       onAddToCart && onAddToCart(item)
                     }}
                     title={"Add " + item.name + " to cart"}
                   >
-                    + Add
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                   </button>
                 </div>
               </div>

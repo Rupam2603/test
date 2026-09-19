@@ -13,7 +13,7 @@ export function AppServiceCard({ service, onBook }) {
         
         <div className="app-service-meta">
           <span className="app-service-duration">
-            ⏱ {typeof service.duration === 'number' ? `${service.duration} mins` : (service.duration?.includes('min') || service.duration?.includes('hr') || service.duration?.includes('Hour') ? service.duration : `${service.duration} mins`)}
+             {typeof service.duration === 'number' ? `${service.duration} mins` : (service.duration?.includes('min') || service.duration?.includes('hr') || service.duration?.includes('Hour') ? service.duration : `${service.duration} mins`)}
           </span>
           {service.price && <span className="app-card-price">₹{service.price}</span>}
         </div>

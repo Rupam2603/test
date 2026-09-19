@@ -77,21 +77,21 @@ export function Footer({ onOpenPage }) {
 
       <div className="footer-contact-row">
         <div className="contact-item">
-          <span className="contact-icon">📍</span>
+          <span className="contact-icon"></span>
           <div>
             <strong>Registered Location:</strong>
             <p>Pandit Satghara, Mallickpara, Serampore, Hooghly, West Bengal, Pin- 712203</p>
           </div>
         </div>
         <div className="contact-item">
-          <span className="contact-icon">📞</span>
+          <span className="contact-icon"></span>
           <div>
             <strong>Support & Orders:</strong>
             <p><a href="tel:+919836307553">+91 9836307553</a></p>
           </div>
         </div>
         <div className="contact-item">
-          <span className="contact-icon">✉️</span>
+          <span className="contact-icon"></span>
           <div>
             <strong>Official Email:</strong>
             <p><a href="mailto:subhonehealthgroup@gmail.com">subhonehealthgroup@gmail.com</a></p>

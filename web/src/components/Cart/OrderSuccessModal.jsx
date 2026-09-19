@@ -11,18 +11,18 @@ export function OrderSuccessModal({ isOpen, order, onClose, onTrackLive, onViewO
           <div className="tracker-brand-badge">
             <span className="pulse-dot" style={{ background: '#4ade80' }}></span>
             <div className="badge-text-group">
-              <span className="fast-tag" style={{ color: '#bbf7d0' }}>⚡ ORDER PLACED • 10 MIN DISPATCH</span>
+              <span className="fast-tag" style={{ color: '#bbf7d0' }}> ORDER PLACED • 10 MIN DISPATCH</span>
               <h3 className="tracker-heading">Order Confirmed & Sent to Hub</h3>
             </div>
           </div>
           <button type="button" className="tracker-close-btn" onClick={onClose} aria-label="Close modal">
-            ✕
+            
           </button>
         </div>
 
         <div style={{ padding: '28px 24px', textAlign: 'center' }}>
           <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#dcfce7', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', margin: '0 auto 16px', border: '3px solid #86efac' }}>
-            ✓
+            
           </div>
 
           <h3 style={{ fontSize: '22px', fontWeight: '900', color: '#0f172a', margin: '0 0 6px' }}>
@@ -39,7 +39,7 @@ export function OrderSuccessModal({ isOpen, order, onClose, onTrackLive, onViewO
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#64748b' }}>Delivery Guarantee:</span>
-              <span style={{ fontWeight: '800', color: '#16a34a' }}>⚡ Within 10 Minutes</span>
+              <span style={{ fontWeight: '800', color: '#16a34a' }}> Within 10 Minutes</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#64748b' }}>Fulfillment Hub:</span>
@@ -77,7 +77,7 @@ export function OrderSuccessModal({ isOpen, order, onClose, onTrackLive, onViewO
               }}
             >
               <span>Track Live Delivery on Google Maps</span>
-              <span>📍</span>
+              <span></span>
             </button>
 
             <button
@@ -98,7 +98,7 @@ export function OrderSuccessModal({ isOpen, order, onClose, onTrackLive, onViewO
                 cursor: 'pointer'
               }}
             >
-              View All Orders & Invoices 📦
+              View All Orders & Invoices 
             </button>
           </div>
         </div>

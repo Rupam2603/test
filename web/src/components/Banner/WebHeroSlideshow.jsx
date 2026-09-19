@@ -4,7 +4,7 @@ const SLIDES = [
   {
     id: 1,
     badge: 'DAILY IMMUNITY & DEFENSE',
-    tag: '🌿 100% Genuine Brands',
+    tag: ' 100% Genuine Brands',
     title: 'Boost Family Health with',
     titleAccent: 'Immunity Essentials',
     titleEnd: '',
@@ -26,7 +26,7 @@ const SLIDES = [
   {
     id: 3,
     badge: 'B2B WHOLESALE PHARMACY',
-    tag: '⚡ High Retailer Margins',
+    tag: ' High Retailer Margins',
     title: 'Direct Supply for',
     titleAccent: 'Licensed Retailers & Clinics',
     titleEnd: '',
@@ -47,7 +47,7 @@ const SLIDES = [
   {
     id: 4,
     badge: 'LIMITED TIME OFFER',
-    tag: '🛡️ 100% Genuine Pharmacy',
+    tag: ' 100% Genuine Pharmacy',
     title: 'Flat',
     titleAccent: '20% Off',
     titleEnd: 'on First Order',
